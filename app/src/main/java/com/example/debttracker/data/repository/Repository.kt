@@ -11,14 +11,15 @@ class Repository(private val database: AppDatabase) {
 
     fun getCurrentDebt(): Debt? = debtDao.getDebt()
 
-    suspend fun createOrUpdateDebt(initialAmount: Double) {
+    suspend fun createOrUpdateDebt(initialAmount: Double, name: String) {
         val currentDebt = getCurrentDebt()
         if (currentDebt == null) {
             debtDao.insertDebt(
                 Debt(
                     initialAmount = initialAmount,
                     currentAmount = initialAmount,
-                    createdAt = System.currentTimeMillis()
+                    createdAt = System.currentTimeMillis(),
+                    name = name
                 )
             )
         } else {

@@ -4,13 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.debttracker.ui.main.MainScreen
+import com.example.debttracker.ui.main.MainViewModel
+import com.example.debttracker.ui.main.MainViewModelFactory
 import com.example.debttracker.ui.theme.DebtTrackerTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,13 +19,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DebtTrackerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            val app = application as DebtTrackerApplication
+            val viewModel: MainViewModel = viewModel(factory = MainViewModelFactory(app.repository))
+            DebtTrackerTheme(dynamicColor = false) {
+                MainScreen(viewModel)
             }
         }
     }
@@ -41,7 +39,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    DebtTrackerTheme {
+    DebtTrackerTheme(dynamicColor = false) {
         Greeting("Android")
     }
 }

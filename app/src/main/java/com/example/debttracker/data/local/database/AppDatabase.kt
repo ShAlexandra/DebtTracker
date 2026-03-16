@@ -9,7 +9,7 @@ import com.example.debttracker.data.local.dao.PaymentDao
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.Payment
 
-@Database(entities = [Debt::class, Payment::class], version = 2, exportSchema = false)
+@Database(entities = [Debt::class, Payment::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun paymentDao(): PaymentDao
