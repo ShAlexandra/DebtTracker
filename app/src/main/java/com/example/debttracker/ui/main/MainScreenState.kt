@@ -7,5 +7,7 @@ data class MainScreenState(
     val name: String = "",
     val isDebtExist: Boolean = false,
     val debt: Debt? = null,
-    val defaultPaymentAmount: Double? = null
+    val defaultPaymentAmount: Double? = null,
+    val errorMessage: String? = null,
+    val paymentError: String? = null
 )

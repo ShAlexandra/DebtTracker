@@ -25,31 +25,83 @@ class MainViewModel(
 
     fun loadDebt() {
         viewModelScope.launch {
-            _mainState.update { it.copy(isLoading = true) }
-            val debt = withContext(Dispatchers.IO) { repository.getCurrentDebt() }
-            _mainState.update {
-                it.copy(
-                    isLoading = false,
-                    isDebtExist = debt != null,
-                    debt = debt
-                )
+            _mainState.update { it.copy(isLoading = true, errorMessage = null, paymentError = null) }
+            try {
+                val debt = withContext(Dispatchers.IO) { repository.getCurrentDebt() }
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        isDebtExist = debt != null,
+                        debt = debt
+                    )
+                }
+            } catch (e: Exception) {
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Failed to load debt data"
+                    )
+                }
             }
         }
     }
 
-    fun onCreateDebt(initialAmount: Double, name: String) {
+    fun createDebt(initialAmount: Double, name: String) {
         viewModelScope.launch {
-            repository.createOrUpdateDebt(initialAmount, name)
-            loadDebt()
+            _mainState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                withContext(Dispatchers.IO) { repository.createOrUpdateDebt(initialAmount, name) }
+                loadDebt()
+            } catch (e: Exception) {
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Failed to create debt"
+                    )
+                }
+            }
+        }
+    }
+
+    fun recordPayment(amount: Double) {
+        viewModelScope.launch {
+            _mainState.update { it.copy(isLoading = true, paymentError = null) }
+            try {
+                withContext(Dispatchers.IO) { repository.recordPayment(amount) }
+                loadDebt()
+            } catch (e: Exception) {
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        paymentError = e.message ?: "Failed to add payment"
+                    )
+                }
+            }
         }
     }
 
     fun onPaymentClick() {
         //TODO только сигнал в UI «открыть диалог платежа» (событие/флаг).
+        viewModelScope.launch {
+            _mainState.update { it.copy(isLoading = true) }
+            recordPayment(200000.0)
+            _mainState.update { it.copy(isLoading = false) }
+        }
+
     }
 
     fun onAddDebtClick() {
         //TODO только сигнал в UI «открыть диалог добавления долга» (событие/флаг).
+        //временно хардкод добавления 3млн
+        createDebt(3000000.0, "Квартира")
+    }
+
+    fun clearError() {
+        _mainState.update { it.copy(errorMessage = null) }
+    }
+
+    fun clearPaymentError() {
+        _mainState.update { it.copy(paymentError = null) }
     }
 }
 
