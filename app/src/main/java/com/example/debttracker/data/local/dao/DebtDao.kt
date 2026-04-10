@@ -11,6 +11,9 @@ interface DebtDao {
     @Query("SELECT * FROM debts LIMIT 1")
     fun getDebt(): Debt?
 
+    @Query("SELECT * FROM debts")
+    fun getDebtList(): List<Debt>?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertDebt(debt: Debt): Long
 

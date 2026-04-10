@@ -1,5 +1,6 @@
 package com.example.debttracker.ui.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -20,19 +21,55 @@ class MainViewModel(
     var mainState: StateFlow<MainScreenState> = _mainState.asStateFlow()
 
     init {
-        loadDebt()
+        loadDebtList()
+//        loadDebt()
+    }
+
+    fun loadDebtList() {
+        viewModelScope.launch {
+            _mainState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    paymentError = null
+                )
+            }
+            try {
+                val debtList = withContext(Dispatchers.IO) { repository.getDebtList() }
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        debtList = debtList
+                    )
+                }
+                Log.d("debt_list", debtList.toString())
+            } catch (e: Exception) {
+                _mainState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Failed to load debt data"
+                    )
+                }
+            }
+        }
     }
 
     fun loadDebt() {
         viewModelScope.launch {
-            _mainState.update { it.copy(isLoading = true, errorMessage = null, paymentError = null) }
+            _mainState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    paymentError = null
+                )
+            }
             try {
                 val debt = withContext(Dispatchers.IO) { repository.getCurrentDebt() }
                 _mainState.update {
                     it.copy(
                         isLoading = false,
-                        isDebtExist = debt != null,
-                        debt = debt
+//                        isDebtExist = debt != null,
+//                        debt = debt
                     )
                 }
             } catch (e: Exception) {
@@ -51,7 +88,7 @@ class MainViewModel(
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 withContext(Dispatchers.IO) { repository.createOrUpdateDebt(initialAmount, name) }
-                loadDebt()
+                loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
                     it.copy(
@@ -68,7 +105,7 @@ class MainViewModel(
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
                 withContext(Dispatchers.IO) { repository.recordPayment(amount) }
-                loadDebt()
+                loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
                     it.copy(

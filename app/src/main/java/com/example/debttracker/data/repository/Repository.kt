@@ -11,6 +11,8 @@ class Repository(private val database: AppDatabase) {
 
     fun getCurrentDebt(): Debt? = debtDao.getDebt()
 
+    fun getDebtList(): List<Debt>? = debtDao.getDebtList()
+
     suspend fun createOrUpdateDebt(initialAmount: Double, name: String) {
         val currentDebt = getCurrentDebt()
         if (currentDebt == null) {

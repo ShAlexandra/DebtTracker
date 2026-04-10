@@ -5,8 +5,7 @@ import com.example.debttracker.data.local.entity.Debt
 data class MainScreenState(
     val isLoading: Boolean = false,
     val name: String = "",
-    val isDebtExist: Boolean = false,
-    val debt: Debt? = null,
+    val debtList: List<Debt>? = null,
     val defaultPaymentAmount: Double? = null,
     val errorMessage: String? = null,
     val paymentError: String? = null
