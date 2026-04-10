@@ -8,8 +8,8 @@ import com.example.debttracker.data.local.entity.Debt
 
 @Dao
 interface DebtDao {
-    @Query("SELECT * FROM debts LIMIT 1")
-    fun getDebt(): Debt?
+    @Query("SELECT * FROM debts WHERE id = :id LIMIT 1")
+    fun getDebtById(id: Long): Debt?
 
     @Query("SELECT * FROM debts")
     fun getDebtList(): List<Debt>?

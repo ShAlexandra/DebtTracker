@@ -31,59 +31,63 @@ fun DebtCard(
 
     val progress = 1f - (debt.currentAmount / debt.initialAmount).toFloat()
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 6.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-
-        Column(
-            modifier = Modifier.padding(24.dp)
+    if (progress != 1f) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp, bottom = 6.dp),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
 
-            Text(
-                text = debt.name,
-                fontSize = 24.sp,
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "Осталось: ${debt.currentAmount} ₽",
-                fontSize = 20.sp,
-            )
-
-            Text(
-                text = "Всего: ${debt.initialAmount} ₽",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            RoundedLinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.secondary,
-                trackColor = Color.Gray,
-                height = 10.dp
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Button(
-                onClick = onRecordPayment,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+            Column(
+                modifier = Modifier.padding(24.dp)
             ) {
+
                 Text(
-                    text = "Отметить платеж",
-                    color = Color.White,
-                    fontSize = 16.sp
+                    text = debt.name,
+                    fontSize = 24.sp,
                 )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Осталось: ${debt.currentAmount} ₽",
+                    fontSize = 20.sp,
+                )
+
+                Text(
+                    text = "Всего: ${debt.initialAmount} ₽",
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                RoundedLinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = Color.Gray,
+                    height = 10.dp
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Button(
+                    onClick = onRecordPayment,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Отметить платеж",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }
@@ -97,7 +101,9 @@ fun RoundedLinearProgressIndicator(
     trackColor: Color = Color.Gray,
     height: Dp = 4.dp
 ) {
-    Canvas(modifier = modifier.fillMaxWidth().height(height)) {
+    Canvas(modifier = modifier
+        .fillMaxWidth()
+        .height(height)) {
         val cornerPx = (height / 2).toPx()  // Полностью скруглённые края
 
         // Трек (фон) - весь со скруглениями

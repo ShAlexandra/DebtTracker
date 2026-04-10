@@ -90,7 +90,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.onPaymentClick() }
+                                        onRecordPayment = { viewModel.onPaymentClick(debt.id) }
                                     )
                                 }
                             }

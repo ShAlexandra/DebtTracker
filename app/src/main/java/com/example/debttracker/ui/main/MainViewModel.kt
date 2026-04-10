@@ -100,11 +100,11 @@ class MainViewModel(
         }
     }
 
-    fun recordPayment(amount: Double) {
+    fun recordPayment(debtId: Long, amount: Double) {
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
-                withContext(Dispatchers.IO) { repository.recordPayment(amount) }
+                withContext(Dispatchers.IO) { repository.recordPayment(debtId, amount) }
                 loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
@@ -117,11 +117,11 @@ class MainViewModel(
         }
     }
 
-    fun onPaymentClick() {
+    fun onPaymentClick(debtId: Long?) {
         //TODO только сигнал в UI «открыть диалог платежа» (событие/флаг).
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true) }
-            recordPayment(200000.0)
+            debtId?.let { recordPayment(it, 200000.0) }
             _mainState.update { it.copy(isLoading = false) }
         }
 
