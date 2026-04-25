@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.Debt
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun DebtCard(
@@ -55,12 +57,12 @@ fun DebtCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Осталось: ${debt.currentAmount} ₽",
+                    text = "Осталось: ${formatAmount(debt.currentAmount)} ₽",
                     fontSize = 20.sp,
                 )
 
                 Text(
-                    text = "Всего: ${debt.initialAmount} ₽",
+                    text = "Всего: ${formatAmount(debt.initialAmount)} ₽",
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -101,9 +103,11 @@ fun RoundedLinearProgressIndicator(
     trackColor: Color = Color.Gray,
     height: Dp = 4.dp
 ) {
-    Canvas(modifier = modifier
-        .fillMaxWidth()
-        .height(height)) {
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+    ) {
         val cornerPx = (height / 2).toPx()  // Полностью скруглённые края
 
         // Трек (фон) - весь со скруглениями
@@ -126,3 +130,6 @@ fun RoundedLinearProgressIndicator(
         }
     }
 }
+
+private fun formatAmount(amount: Long): String =
+    NumberFormat.getNumberInstance(Locale.Builder().setLanguage("ru").setRegion("RU").build()).format(amount)

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "payments")
 data class Payment(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
-    val amount: Double,
+    val amount: Long,
     val dateMillis: Long,
     val debtId: Long
 )

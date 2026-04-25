@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.debttracker.ui.main.MainScreen
+import com.example.debttracker.ui.main.BindMainScreen
 import com.example.debttracker.ui.main.MainViewModel
 import com.example.debttracker.ui.main.MainViewModelFactory
 import com.example.debttracker.ui.theme.DebtTrackerTheme
@@ -22,24 +22,8 @@ class MainActivity : ComponentActivity() {
             val app = application as DebtTrackerApplication
             val viewModel: MainViewModel = viewModel(factory = MainViewModelFactory(app.repository))
             DebtTrackerTheme(dynamicColor = false) {
-                MainScreen(viewModel)
+                BindMainScreen(viewModel)
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DebtTrackerTheme(dynamicColor = false) {
-        Greeting("Android")
     }
 }

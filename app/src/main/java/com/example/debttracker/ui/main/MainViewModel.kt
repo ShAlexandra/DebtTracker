@@ -83,11 +83,11 @@ class MainViewModel(
         }
     }
 
-    fun createDebt(initialAmount: Double, name: String) {
+    fun createDebt(initialAmount: Long, name: String, date: Long?) {
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                withContext(Dispatchers.IO) { repository.createOrUpdateDebt(initialAmount, name) }
+                withContext(Dispatchers.IO) { repository.createOrUpdateDebt(initialAmount, name, date) }
                 loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
@@ -100,7 +100,7 @@ class MainViewModel(
         }
     }
 
-    fun recordPayment(debtId: Long, amount: Double) {
+    fun recordPayment(debtId: Long, amount: Long) {
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
@@ -121,16 +121,19 @@ class MainViewModel(
         //TODO только сигнал в UI «открыть диалог платежа» (событие/флаг).
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true) }
-            debtId?.let { recordPayment(it, 200000.0) }
+            debtId?.let { recordPayment(it, 200000) }
             _mainState.update { it.copy(isLoading = false) }
         }
 
     }
 
-    fun onAddDebtClick() {
-        //TODO только сигнал в UI «открыть диалог добавления долга» (событие/флаг).
-        //временно хардкод добавления 3млн
-        createDebt(3000000.0, "Квартира")
+    fun showPaymentDialog() = _mainState.update { it.copy(showPaymentDialog = true) }
+
+    fun showDebtDialog() = _mainState.update { it.copy(showDebtDialog = true) }
+
+    fun confirmAddDebt(amount: Long, name: String, date: Long?) {
+        createDebt(amount, name, date)
+        _mainState.update { it.copy(showDebtDialog = false) }
     }
 
     fun clearError() {
@@ -140,6 +143,8 @@ class MainViewModel(
     fun clearPaymentError() {
         _mainState.update { it.copy(paymentError = null) }
     }
+
+    fun dismissDialogs() = _mainState.update { it.copy(showPaymentDialog = false, showDebtDialog = false) }
 }
 
 class MainViewModelFactory(

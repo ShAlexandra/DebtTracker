@@ -18,5 +18,5 @@ interface DebtDao {
     suspend fun insertDebt(debt: Debt): Long
 
     @Query("UPDATE debts SET currentAmount = :amount WHERE id = :id")
-    suspend fun updateCurrentAmount(id: Long, amount: Double)
+    suspend fun updateCurrentAmount(id: Long, amount: Long)
 }

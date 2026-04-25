@@ -13,13 +13,18 @@ class Repository(private val database: AppDatabase) {
 
     fun getDebtList(): List<Debt>? = debtDao.getDebtList()
 
-    suspend fun createOrUpdateDebt(initialAmount: Double, name: String, id: Long? = null) {
+    suspend fun createOrUpdateDebt(
+        initialAmount: Long,
+        name: String,
+        date: Long? = null,
+        id: Long? = null
+    ) {
         if (id == null) {
             debtDao.insertDebt(
                 Debt(
                     initialAmount = initialAmount,
                     currentAmount = initialAmount,
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = date ?: System.currentTimeMillis(),
                     name = name
                 )
             )
@@ -29,11 +34,11 @@ class Repository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun recordPayment(debtId: Long, amount: Double) {
+    suspend fun recordPayment(debtId: Long, amount: Long) {
         database.withTransaction {
             val currentDebt = debtDao.getDebtById(debtId)
                 ?: throw IllegalStateException("Debt does not exist")
-            if (currentDebt.currentAmount == 0.0) {
+            if (currentDebt.currentAmount == 0L) {
                 throw IllegalStateException("Debt is already fully paid")
             }
             paymentDao.insertPayment(
@@ -43,7 +48,7 @@ class Repository(private val database: AppDatabase) {
                     debtId = debtId
                 )
             )
-            val newRemaining = (currentDebt.currentAmount - amount).coerceAtLeast(0.0)
+            val newRemaining = (currentDebt.currentAmount - amount).coerceAtLeast(0L)
             debtDao.updateCurrentAmount(id = debtId, amount = newRemaining)
         }
     }

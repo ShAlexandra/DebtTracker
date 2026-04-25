@@ -6,7 +6,9 @@ data class MainScreenState(
     val isLoading: Boolean = false,
     val name: String = "",
     val debtList: List<Debt>? = null,
-    val defaultPaymentAmount: Double? = null,
+    val defaultPaymentAmount: Long? = null,
     val errorMessage: String? = null,
-    val paymentError: String? = null
+    val paymentError: String? = null,
+    val showPaymentDialog: Boolean = false,
+    val showDebtDialog: Boolean = false,
 )

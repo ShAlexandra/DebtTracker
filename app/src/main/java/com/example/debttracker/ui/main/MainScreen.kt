@@ -28,16 +28,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.debttracker.ui.main.debtCard.DebtCard
+import com.example.debttracker.ui.main.dialogs.BindDebtDialog
+import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
 
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun BindMainScreen(viewModel: MainViewModel) {
 
     val state = viewModel.mainState.collectAsState().value
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {viewModel.onAddDebtClick()},
+                onClick = { viewModel.showDebtDialog() },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Добавить долг")
@@ -82,7 +84,6 @@ fun MainScreen(viewModel: MainViewModel) {
                     else -> {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-//                            contentPadding = PaddingValues(bottom = 104.dp)
                         ) {
 
                             state.debtList?.let { debts ->
@@ -90,7 +91,7 @@ fun MainScreen(viewModel: MainViewModel) {
 
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.onPaymentClick(debt.id) }
+                                        onRecordPayment = { viewModel.showPaymentDialog(/*debt.id*/) }
                                     )
                                 }
                             }
@@ -103,6 +104,21 @@ fun MainScreen(viewModel: MainViewModel) {
                 LoadingView()
             }
         }
+    }
+
+    if (state.showPaymentDialog) {
+        BindPaymentDialog(
+            defaultAmount = 200000, //TODO это пока, потом сделаем запоминание последнего введенного долга
+            onDismiss = { viewModel.dismissDialogs() },
+            onConfirm = { /*amount, date -> viewModel.confirmPayment(amount, date)*/ }
+        )
+    }
+
+    if (state.showDebtDialog) {
+        BindDebtDialog(
+            onDismiss = { viewModel.dismissDialogs() },
+            onConfirm = { name, amount, date -> viewModel.confirmAddDebt(amount, name, date) }
+        )
     }
 }
 
