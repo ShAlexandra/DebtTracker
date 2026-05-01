@@ -88,10 +88,9 @@ fun BindMainScreen(viewModel: MainViewModel) {
 
                             state.debtList?.let { debts ->
                                 items(debts) { debt ->
-
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.showPaymentDialog(/*debt.id*/) }
+                                        onRecordPayment = { viewModel.showPaymentDialog(debt) }
                                     )
                                 }
                             }
@@ -107,11 +106,16 @@ fun BindMainScreen(viewModel: MainViewModel) {
     }
 
     if (state.showPaymentDialog) {
-        BindPaymentDialog(
-            defaultAmount = 200000, //TODO это пока, потом сделаем запоминание последнего введенного долга
-            onDismiss = { viewModel.dismissDialogs() },
-            onConfirm = { /*amount, date -> viewModel.confirmPayment(amount, date)*/ }
-        )
+        if (state.currentDebt!=null) {
+            BindPaymentDialog(
+                debt = state.currentDebt,
+                onDismiss = { viewModel.dismissDialogs() },
+                onConfirm = { debtId, amount, date -> viewModel.confirmAddPayment(debtId, amount, date) }
+            )
+        } else {
+            viewModel.dismissDialogs()
+        }
+
     }
 
     if (state.showDebtDialog) {

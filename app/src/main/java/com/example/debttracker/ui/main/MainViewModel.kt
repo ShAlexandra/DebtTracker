@@ -1,9 +1,9 @@
 package com.example.debttracker.ui.main
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +22,6 @@ class MainViewModel(
 
     init {
         loadDebtList()
-//        loadDebt()
     }
 
     fun loadDebtList() {
@@ -42,36 +41,6 @@ class MainViewModel(
                         debtList = debtList
                     )
                 }
-                Log.d("debt_list", debtList.toString())
-            } catch (e: Exception) {
-                _mainState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Failed to load debt data"
-                    )
-                }
-            }
-        }
-    }
-
-    fun loadDebt() {
-        viewModelScope.launch {
-            _mainState.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                    paymentError = null
-                )
-            }
-            try {
-                val debt = withContext(Dispatchers.IO) { repository.getCurrentDebt() }
-                _mainState.update {
-                    it.copy(
-                        isLoading = false,
-//                        isDebtExist = debt != null,
-//                        debt = debt
-                    )
-                }
             } catch (e: Exception) {
                 _mainState.update {
                     it.copy(
@@ -87,7 +56,13 @@ class MainViewModel(
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                withContext(Dispatchers.IO) { repository.createOrUpdateDebt(initialAmount, name, date) }
+                withContext(Dispatchers.IO) {
+                    repository.createOrUpdateDebt(
+                        initialAmount,
+                        name,
+                        date
+                    )
+                }
                 loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
@@ -100,11 +75,11 @@ class MainViewModel(
         }
     }
 
-    fun recordPayment(debtId: Long, amount: Long) {
+    fun recordPayment(debtId: Long, amount: Long, date: Long?) {
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
-                withContext(Dispatchers.IO) { repository.recordPayment(debtId, amount) }
+                withContext(Dispatchers.IO) { repository.recordPayment(debtId, amount, date) }
                 loadDebtList()
             } catch (e: Exception) {
                 _mainState.update {
@@ -117,34 +92,28 @@ class MainViewModel(
         }
     }
 
-    fun onPaymentClick(debtId: Long?) {
-        //TODO только сигнал в UI «открыть диалог платежа» (событие/флаг).
+    fun confirmAddPayment(debtId: Long, amount: Long, date: Long?) {
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true) }
-            debtId?.let { recordPayment(it, 200000) }
-            _mainState.update { it.copy(isLoading = false) }
+            recordPayment(debtId, amount, date)
+            _mainState.update { it.copy(isLoading = false, showPaymentDialog = false) }
         }
 
     }
 
-    fun showPaymentDialog() = _mainState.update { it.copy(showPaymentDialog = true) }
+    fun showPaymentDialog(debt: Debt) =
+        _mainState.update { it.copy(currentDebt = debt, showPaymentDialog = true) }
 
     fun showDebtDialog() = _mainState.update { it.copy(showDebtDialog = true) }
 
     fun confirmAddDebt(amount: Long, name: String, date: Long?) {
+        _mainState.update { it.copy(isLoading = true) }
         createDebt(amount, name, date)
-        _mainState.update { it.copy(showDebtDialog = false) }
+        _mainState.update { it.copy(isLoading = false, showDebtDialog = false) }
     }
 
-    fun clearError() {
-        _mainState.update { it.copy(errorMessage = null) }
-    }
-
-    fun clearPaymentError() {
-        _mainState.update { it.copy(paymentError = null) }
-    }
-
-    fun dismissDialogs() = _mainState.update { it.copy(showPaymentDialog = false, showDebtDialog = false) }
+    fun dismissDialogs() =
+        _mainState.update { it.copy(showPaymentDialog = false, showDebtDialog = false) }
 }
 
 class MainViewModelFactory(

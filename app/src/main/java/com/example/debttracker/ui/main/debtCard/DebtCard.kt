@@ -28,10 +28,10 @@ import java.util.Locale
 @Composable
 fun DebtCard(
     debt: Debt,
-    onRecordPayment: () -> Unit
+    onRecordPayment: (debt: Debt) -> Unit
 ) {
 
-    val progress = 1f - (debt.currentAmount / debt.initialAmount).toFloat()
+    val progress = 1f - (debt.currentAmount.toFloat() / debt.initialAmount.toFloat())
 
     if (progress != 1f) {
         Card(
@@ -80,7 +80,7 @@ fun DebtCard(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Button(
-                    onClick = onRecordPayment,
+                    onClick = { onRecordPayment(debt) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -132,4 +132,5 @@ fun RoundedLinearProgressIndicator(
 }
 
 private fun formatAmount(amount: Long): String =
-    NumberFormat.getNumberInstance(Locale.Builder().setLanguage("ru").setRegion("RU").build()).format(amount)
+    NumberFormat.getNumberInstance(Locale.Builder().setLanguage("ru").setRegion("RU").build())
+        .format(amount)

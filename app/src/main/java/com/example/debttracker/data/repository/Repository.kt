@@ -34,7 +34,7 @@ class Repository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun recordPayment(debtId: Long, amount: Long) {
+    suspend fun recordPayment(debtId: Long, amount: Long, date: Long? = null) {
         database.withTransaction {
             val currentDebt = debtDao.getDebtById(debtId)
                 ?: throw IllegalStateException("Debt does not exist")
@@ -44,7 +44,7 @@ class Repository(private val database: AppDatabase) {
             paymentDao.insertPayment(
                 Payment(
                     amount = amount,
-                    dateMillis = System.currentTimeMillis(),
+                    dateMillis = date ?: System.currentTimeMillis(),
                     debtId = debtId
                 )
             )
