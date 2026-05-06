@@ -51,6 +51,7 @@ fun BindPaymentDialog(
 
     var date by remember { mutableStateOf(null) }
 
+
     val isValid = parsedAmount != null && parsedAmount > 0 && parsedAmount <= debt.currentAmount
 
     AlertDialog(
@@ -84,16 +85,18 @@ fun BindPaymentDialog(
                 horizontalAlignment = Alignment.Start
             ) {
                 OutlinedTextField(
-                    value = amount,
-                    onValueChange = { amount = it },
+                    value = rawAmount,
+                    onValueChange = { input ->
+                        amount = input.filter { it.isDigit() && !(input.length == 1 && it == '0') }
+                    },
                     label = { Text("Сумма") },
                     singleLine = true,
-                    isError = !isValid && amount.isNotEmpty(),
+                    isError = rawAmount.isNotEmpty() && parsedAmount == null,
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = AmountVisualTransformation,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
-                    )
+                    ),
+                    visualTransformation = AmountVisualTransformation
                 )
 
                 if (!isValid && amount.isNotEmpty()) {

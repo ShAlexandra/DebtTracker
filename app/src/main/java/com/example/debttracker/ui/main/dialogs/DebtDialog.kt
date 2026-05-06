@@ -86,7 +86,7 @@ fun BindDebtDialog(
                 OutlinedTextField(
                     value = rawAmount,
                     onValueChange = { input ->
-                        amount = input.filter { it.isDigit() }
+                        amount = input.filter { it.isDigit() && !(input.length == 1 && it == '0') }
                     },
                     label = { Text("Сумма") },
                     singleLine = true,
