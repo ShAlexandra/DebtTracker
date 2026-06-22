@@ -69,7 +69,7 @@ fun BindPaymentDialog(
     val rawAmount = amount.filter { it.isDigit() }
     val parsedAmount = rawAmount.toLongOrNull()
 
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+    var selectedDateMillis by remember { mutableStateOf<Long?>(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     val displayDate = selectedDateMillis?.let {
         SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(it))
