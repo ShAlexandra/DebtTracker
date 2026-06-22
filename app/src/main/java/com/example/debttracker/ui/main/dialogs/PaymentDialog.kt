@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,13 +42,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.ui.utils.AmountVisualTransformation
+import kotlinx.coroutines.android.awaitFrame
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,6 +89,15 @@ fun BindPaymentDialog(
         disabledTextColor = MaterialTheme.colorScheme.onSurface,
         disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
+
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        awaitFrame()
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -122,7 +137,9 @@ fun BindPaymentDialog(
                     label = { Text("Сумма") },
                     singleLine = true,
                     isError = rawAmount.isNotEmpty() && parsedAmount == null,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
@@ -159,8 +176,8 @@ fun BindPaymentDialog(
                         contentPadding = PaddingValues(0.dp),
                         shape = RoundedCornerShape(0.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Text("Ввести весь остаток:", style = compactLabelStyle)
+                        Row() {
+                            Text("Ввести весь остаток: ", style = compactLabelStyle)
                             Text(
                                 debt.currentAmount.toString(),
                                 style = compactLabelStyle
@@ -169,7 +186,7 @@ fun BindPaymentDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Box(
                     modifier = Modifier

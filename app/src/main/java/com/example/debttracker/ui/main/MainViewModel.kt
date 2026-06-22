@@ -1,5 +1,6 @@
 package com.example.debttracker.ui.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -20,11 +21,16 @@ class MainViewModel(
     private val _mainState = MutableStateFlow(MainScreenState())
     var mainState: StateFlow<MainScreenState> = _mainState.asStateFlow()
 
+    companion object {
+        private const val TAG = "MainViewModel"
+    }
+
     init {
         loadDebtList()
     }
 
     fun loadDebtList() {
+        Log.d(TAG, "loadDebtList() called")
         viewModelScope.launch {
             _mainState.update {
                 it.copy(
@@ -34,7 +40,9 @@ class MainViewModel(
                 )
             }
             try {
-                val debtList = withContext(Dispatchers.IO) { repository.getDebtList() }
+                val debtList = withContext(Dispatchers.IO) {
+                    repository.getDebtList()?.filter { it.currentAmount != 0L }
+                }
                 _mainState.update {
                     it.copy(
                         isLoading = false,
@@ -53,6 +61,7 @@ class MainViewModel(
     }
 
     fun createDebt(initialAmount: Long, name: String, date: Long?) {
+        Log.d(TAG, "createDebt() called with initialAmount=$initialAmount, name='$name', date=$date")
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
@@ -76,6 +85,7 @@ class MainViewModel(
     }
 
     fun recordPayment(debtId: Long, amount: Long, date: Long?) {
+        Log.d(TAG, "recordPayment() called with debtId=$debtId, amount=$amount, date=$date")
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
@@ -93,6 +103,7 @@ class MainViewModel(
     }
 
     fun confirmAddPayment(debtId: Long, amount: Long, date: Long?) {
+        Log.d(TAG, "confirmAddPayment() called with debtId=$debtId, amount=$amount, date=$date")
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true) }
             recordPayment(debtId, amount, date)
@@ -101,19 +112,27 @@ class MainViewModel(
 
     }
 
-    fun showPaymentDialog(debt: Debt) =
+    fun showPaymentDialog(debt: Debt) {
+        Log.d(TAG, "showPaymentDialog() called for debtId=${debt.id}, name='${debt.name}', currentAmount=${debt.currentAmount}")
         _mainState.update { it.copy(currentDebt = debt, showPaymentDialog = true) }
+    }
 
-    fun showDebtDialog() = _mainState.update { it.copy(showDebtDialog = true) }
+    fun showDebtDialog() {
+        Log.d(TAG, "showDebtDialog() called")
+        _mainState.update { it.copy(showDebtDialog = true) }
+    }
 
     fun confirmAddDebt(amount: Long, name: String, date: Long?) {
+        Log.d(TAG, "confirmAddDebt() called with amount=$amount, name='$name', date=$date")
         _mainState.update { it.copy(isLoading = true) }
         createDebt(amount, name, date)
         _mainState.update { it.copy(isLoading = false, showDebtDialog = false) }
     }
 
-    fun dismissDialogs() =
+    fun dismissDialogs() {
+        Log.d(TAG, "dismissDialogs() called")
         _mainState.update { it.copy(showPaymentDialog = false, showDebtDialog = false) }
+    }
 }
 
 class MainViewModelFactory(
