@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.Debt
+import com.example.debttracker.data.local.entity.DebtType
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -30,6 +31,14 @@ fun DebtCard(
     debt: Debt,
     onRecordPayment: (debt: Debt) -> Unit
 ) {
+
+    val variantColor = when {
+        debt.type == DebtType.OWE_ME ->
+            Color(0xFF4CAF50)
+
+        else ->
+            Color(0xFFE53935)
+    }
 
     val progress = 1f - (debt.currentAmount.toFloat() / debt.initialAmount.toFloat())
 
@@ -59,6 +68,7 @@ fun DebtCard(
                 Text(
                     text = "Осталось: ${formatAmount(debt.currentAmount)} ₽",
                     fontSize = 20.sp,
+                    color = variantColor
                 )
 
                 Text(
@@ -72,7 +82,7 @@ fun DebtCard(
                 RoundedLinearProgressIndicator(
                     progress = progress,
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = variantColor,
                     trackColor = Color.Gray,
                     height = 10.dp
                 )

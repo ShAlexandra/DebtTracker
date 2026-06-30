@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class Debt (
     @PrimaryKey(autoGenerate = true) val id: Long? = null,
     val name: String,
-    val debtType: DebtType,
+    val type: DebtType,
     val initialAmount: Long,
     val currentAmount: Long,
     val createdAt: Long

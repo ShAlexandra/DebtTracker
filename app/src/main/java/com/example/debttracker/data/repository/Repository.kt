@@ -39,7 +39,7 @@ class Repository(private val database: AppDatabase) {
                 currentAmount = initialAmount,
                 createdAt = date ?: System.currentTimeMillis(),
                 name = name,
-                debtType = debtType
+                type = debtType
             )
             Log.d(TAG, "createOrUpdateDebt() inserting new debt: $debt")
             debtDao.insertDebt(debt)

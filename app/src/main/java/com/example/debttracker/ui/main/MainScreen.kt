@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.ui.main.debtCard.DebtCard
 import com.example.debttracker.ui.main.dialogs.BindDebtDialog
 import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
@@ -85,8 +86,16 @@ fun BindMainScreen(viewModel: MainViewModel) {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            state.debtList?.filter { it.type == DebtType.OWE_ME }?.let { debts ->
+                                items(debts) { debt ->
+                                    DebtCard(
+                                        debt = debt,
+                                        onRecordPayment = { viewModel.showPaymentDialog(debt) }
+                                    )
+                                }
+                            }
 
-                            state.debtList?.let { debts ->
+                            state.debtList?.filter { it.type == DebtType.I_OWE }?.let { debts ->
                                 items(debts) { debt ->
                                     DebtCard(
                                         debt = debt,
