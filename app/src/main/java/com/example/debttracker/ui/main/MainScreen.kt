@@ -121,7 +121,7 @@ fun BindMainScreen(viewModel: MainViewModel) {
     if (state.showDebtDialog) {
         BindDebtDialog(
             onDismiss = { viewModel.dismissDialogs() },
-            onConfirm = { name, amount, date -> viewModel.confirmAddDebt(amount, name, date) }
+            onConfirm = { name, amount, debtType, date -> viewModel.confirmAddDebt(amount, name, debtType, date) }
         )
     }
 }

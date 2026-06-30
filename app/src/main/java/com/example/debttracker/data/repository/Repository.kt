@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.example.debttracker.data.local.database.AppDatabase
 import com.example.debttracker.data.local.entity.Debt
+import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
 
 class Repository(private val database: AppDatabase) {
@@ -27,6 +28,7 @@ class Repository(private val database: AppDatabase) {
     suspend fun createOrUpdateDebt(
         initialAmount: Long,
         name: String,
+        debtType: DebtType,
         date: Long? = null,
         id: Long? = null
     ) {
@@ -36,7 +38,8 @@ class Repository(private val database: AppDatabase) {
                 initialAmount = initialAmount,
                 currentAmount = initialAmount,
                 createdAt = date ?: System.currentTimeMillis(),
-                name = name
+                name = name,
+                debtType = debtType
             )
             Log.d(TAG, "createOrUpdateDebt() inserting new debt: $debt")
             debtDao.insertDebt(debt)

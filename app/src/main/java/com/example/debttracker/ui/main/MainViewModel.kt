@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.debttracker.data.local.entity.Debt
+import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.repository.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +61,7 @@ class MainViewModel(
         }
     }
 
-    fun createDebt(initialAmount: Long, name: String, date: Long?) {
+    fun createDebt(initialAmount: Long, name: String, debtType: DebtType, date: Long?) {
         Log.d(TAG, "createDebt() called with initialAmount=$initialAmount, name='$name', date=$date")
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -69,7 +70,8 @@ class MainViewModel(
                     repository.createOrUpdateDebt(
                         initialAmount,
                         name,
-                        date
+                        debtType,
+                        date,
                     )
                 }
                 loadDebtList()
@@ -122,10 +124,10 @@ class MainViewModel(
         _mainState.update { it.copy(showDebtDialog = true) }
     }
 
-    fun confirmAddDebt(amount: Long, name: String, date: Long?) {
+    fun confirmAddDebt(amount: Long, name: String, debtType: DebtType, date: Long?) {
         Log.d(TAG, "confirmAddDebt() called with amount=$amount, name='$name', date=$date")
         _mainState.update { it.copy(isLoading = true) }
-        createDebt(amount, name, date)
+        createDebt(amount, name, debtType, date)
         _mainState.update { it.copy(isLoading = false, showDebtDialog = false) }
     }
 

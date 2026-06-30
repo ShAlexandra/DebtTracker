@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.ui.utils.AmountVisualTransformation
 import kotlinx.coroutines.android.awaitFrame
 import java.text.SimpleDateFormat
@@ -50,11 +51,14 @@ import java.util.Locale
 @Composable
 fun BindDebtDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Long, date: Long?) -> Unit
+    onConfirm: (name: String, amount: Long, debtType: DebtType, date: Long?) -> Unit
 ) {
 
     var name by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
+    var debtType by remember {
+        mutableStateOf(DebtType.I_OWE)
+    }
 
     val rawAmount = amount.filter { it.isDigit() }
     val parsedAmount = rawAmount.toLongOrNull()
@@ -116,10 +120,19 @@ fun BindDebtDialog(
         text = {
             Column {
 
+                DebtTypeSelector(
+                    selectedType = debtType,
+                    onTypeSelected = {
+                        debtType = it
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Кому должен") },
+                    label = { Text("Имя") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -188,7 +201,7 @@ fun BindDebtDialog(
                 shape = RoundedCornerShape(12.dp),
                 onClick = {
                     if (isValid) {
-                        onConfirm(name.trim(), parsedAmount, selectedDateMillis)
+                        onConfirm(name.trim(), parsedAmount, debtType, selectedDateMillis)
                     }
                 },
                 enabled = isValid
