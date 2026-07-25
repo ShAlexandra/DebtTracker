@@ -27,28 +27,21 @@ class MainViewModel(
     }
 
     init {
-        loadDebtList()
+        observeDebtList()
     }
 
-    fun loadDebtList() {
-        Log.d(TAG, "loadDebtList() called")
+    private fun observeDebtList() {
+        Log.d(TAG, "observeDebtList() started")
         viewModelScope.launch {
-            _mainState.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                    paymentError = null
-                )
-            }
+            _mainState.update { it.copy(isLoading = true) }
             try {
-                val debtList = withContext(Dispatchers.IO) {
-                    repository.getDebtList()?.filter { it.currentAmount != 0L }
-                }
-                _mainState.update {
-                    it.copy(
-                        isLoading = false,
-                        debtList = debtList
-                    )
+                repository.getDebtListFlow().collect { debts ->
+                    _mainState.update {
+                        it.copy(
+                            isLoading = false,
+                            debtList = debts.filter { d -> d.currentAmount != 0L }
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _mainState.update {
@@ -74,7 +67,7 @@ class MainViewModel(
                         date,
                     )
                 }
-                loadDebtList()
+                _mainState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _mainState.update {
                     it.copy(
@@ -92,7 +85,7 @@ class MainViewModel(
             _mainState.update { it.copy(isLoading = true, paymentError = null) }
             try {
                 withContext(Dispatchers.IO) { repository.recordPayment(debtId, amount, date) }
-                loadDebtList()
+                _mainState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _mainState.update {
                     it.copy(

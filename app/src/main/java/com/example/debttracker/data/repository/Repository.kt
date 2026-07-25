@@ -6,6 +6,7 @@ import com.example.debttracker.data.local.database.AppDatabase
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
+import kotlinx.coroutines.flow.Flow
 
 class Repository(private val database: AppDatabase) {
     private val debtDao = database.debtDao()
@@ -23,6 +24,11 @@ class Repository(private val database: AppDatabase) {
         val result = debtDao.getDebtList()
         Log.d(TAG, "getDebtList() result: ${result?.size ?: 0} debts; ids=${result?.map { it.id }}")
         return result
+    }
+
+    fun getDebtListFlow(): Flow<List<Debt>> {
+        Log.d(TAG, "getDebtListFlow() called")
+        return debtDao.getDebtListFlow()
     }
 
     suspend fun createOrUpdateDebt(
@@ -89,6 +95,24 @@ class Repository(private val database: AppDatabase) {
                 id = debt.id!!,
                 amount = newAmount
             )
+        }
+    }
+
+    fun getPaymentsForDebt(debtId: Long): Flow<List<Payment>> {
+        Log.d(TAG, "getPaymentsForDebt() called with debtId=$debtId")
+        return paymentDao.getPaymentsByDebtId(debtId)
+    }
+
+    fun getDebtByIdFlow(debtId: Long): Flow<Debt?> {
+        Log.d(TAG, "getDebtByIdFlow() called with debtId=$debtId")
+        return debtDao.getDebtByIdFlow(debtId)
+    }
+
+    suspend fun deleteDebt(debtId: Long) {
+        Log.d(TAG, "deleteDebt() called with debtId=$debtId")
+        database.withTransaction {
+            paymentDao.deletePaymentsByDebtId(debtId)
+            debtDao.deleteDebt(debtId)
         }
     }
 

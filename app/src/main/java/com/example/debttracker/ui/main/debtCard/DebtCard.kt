@@ -1,6 +1,7 @@
 package com.example.debttracker.ui.main.debtCard
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +30,8 @@ import java.util.Locale
 @Composable
 fun DebtCard(
     debt: Debt,
-    onRecordPayment: (debt: Debt) -> Unit
+    onRecordPayment: (debt: Debt) -> Unit,
+    onDebtClick: (debt: Debt) -> Unit
 ) {
 
     val variantColor = when {
@@ -46,7 +48,8 @@ fun DebtCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp, bottom = 6.dp),
+                .padding(top = 6.dp, bottom = 6.dp)
+                .clickable { onDebtClick(debt) },
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(4.dp),
             colors = CardDefaults.cardColors(

@@ -15,6 +15,12 @@ interface PaymentDao {
     @Query("DELETE FROM payments WHERE id = :id")
     suspend fun deletePayment(id: Long)
 
+    @Query("SELECT * FROM payments WHERE debtId = :debtId ORDER BY dateMillis DESC")
+    fun getPaymentsByDebtId(debtId: Long): Flow<List<Payment>>
+
     @Query("SELECT * FROM payments ORDER BY dateMillis DESC")
     fun getAllPayments(): Flow<List<Payment>>
+
+    @Query("DELETE FROM payments WHERE debtId = :debtId")
+    suspend fun deletePaymentsByDebtId(debtId: Long)
 }

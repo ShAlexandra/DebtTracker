@@ -33,7 +33,10 @@ import com.example.debttracker.ui.main.dialogs.BindDebtDialog
 import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
 
 @Composable
-fun BindMainScreen(viewModel: MainViewModel) {
+fun BindMainScreen(
+    viewModel: MainViewModel,
+    onDebtClick: (Long) -> Unit
+) {
 
     val state = viewModel.mainState.collectAsState().value
 
@@ -90,7 +93,8 @@ fun BindMainScreen(viewModel: MainViewModel) {
                                 items(debts) { debt ->
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.showPaymentDialog(debt) }
+                                        onRecordPayment = { viewModel.showPaymentDialog(debt) },
+                                        onDebtClick = { onDebtClick(it.id!!) }
                                     )
                                 }
                             }
@@ -99,7 +103,8 @@ fun BindMainScreen(viewModel: MainViewModel) {
                                 items(debts) { debt ->
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.showPaymentDialog(debt) }
+                                        onRecordPayment = { viewModel.showPaymentDialog(debt) },
+                                        onDebtClick = { onDebtClick(it.id!!) }
                                     )
                                 }
                             }
