@@ -71,7 +71,6 @@ fun BindEditDebtDialog(
 
     val reminderOptions = listOf(
         null to "Без напоминаний",
-        -1 to "Тест: 1 минута",
         1 to "Каждый день",
         3 to "Раз в 3 дня",
         7 to "Раз в неделю",
