@@ -50,15 +50,15 @@ The app follows the **MVVM** pattern with a clean layer separation:
 ├─────────────────────────────────────┤
 │  ViewModel Layer                    │
 │  MainViewModel, DebtDetailsVM       │
-│  → Manages UI state                │
-│  → Calls Repository methods        │
+│  → Manages UI state                 │
+│  → Calls Repository methods         │
 ├─────────────────────────────────────┤
 │  Data Layer                         │
 │  Repository                         │
 │  → Business logic (transactions,    │
 │    amount recalculation)            │
-│  → DAO (DebtDao, PaymentDao)       │
-│  → Entity (Debt, Payment, DebtType)│
+│  → DAO (DebtDao, PaymentDao)        │
+│  → Entity (Debt, Payment, DebtType) │
 ├─────────────────────────────────────┤
 │  Room Database (SQLite)             │
 │  Tables: debts, payments            │
