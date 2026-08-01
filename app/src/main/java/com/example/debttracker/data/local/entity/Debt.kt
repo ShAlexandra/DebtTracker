@@ -10,5 +10,7 @@ data class Debt (
     val type: DebtType,
     val initialAmount: Long,
     val currentAmount: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    val reminderIntervalDays: Int? = null,
+    val lastReminderTimestamp: Long? = null
 )

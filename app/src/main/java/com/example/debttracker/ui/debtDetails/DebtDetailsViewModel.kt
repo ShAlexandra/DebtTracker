@@ -70,6 +70,27 @@ class DebtDetailsViewModel(
             }
         }
     }
+
+    fun updateDebt(name: String, initialAmount: Long, createdAt: Long, reminderIntervalDays: Int?) {
+        Log.d(TAG, "updateDebt() called with id=$debtId, name='$name', initialAmount=$initialAmount, reminderIntervalDays=$reminderIntervalDays")
+        viewModelScope.launch {
+            try {
+                val currentDebt = repository.getCurrentDebt(debtId) ?: return@launch
+                val paid = currentDebt.initialAmount - currentDebt.currentAmount
+                val newCurrentAmount = (initialAmount - paid).coerceAtLeast(0L)
+                repository.updateDebt(
+                    id = debtId,
+                    name = name,
+                    initialAmount = initialAmount,
+                    currentAmount = newCurrentAmount,
+                    createdAt = createdAt,
+                    reminderIntervalDays = reminderIntervalDays
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "updateDebt() failed: ${e.message}")
+            }
+        }
+    }
 }
 
 class DebtDetailsViewModelFactory(

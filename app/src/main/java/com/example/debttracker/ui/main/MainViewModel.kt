@@ -1,12 +1,14 @@
 package com.example.debttracker.ui.main
 
+import android.app.Application
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.repository.Repository
+import com.example.debttracker.ui.utils.ReminderWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,14 +18,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainViewModel(
+    application: Application,
     private val repository: Repository
-) : ViewModel() {
+) : AndroidViewModel(application) {
+
+    private val context = application.applicationContext
 
     private val _mainState = MutableStateFlow(MainScreenState())
-    var mainState: StateFlow<MainScreenState> = _mainState.asStateFlow()
+    val mainState: StateFlow<MainScreenState> = _mainState.asStateFlow()
 
     companion object {
         private const val TAG = "MainViewModel"
+
+        fun factory(application: Application, repository: Repository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return MainViewModel(application, repository) as T
+                }
+            }
+        }
     }
 
     init {
@@ -54,8 +68,8 @@ class MainViewModel(
         }
     }
 
-    fun createDebt(initialAmount: Long, name: String, debtType: DebtType, date: Long?) {
-        Log.d(TAG, "createDebt() called with initialAmount=$initialAmount, name='$name', date=$date")
+    fun createDebt(initialAmount: Long, name: String, debtType: DebtType, date: Long?, reminderIntervalDays: Int?) {
+        Log.d(TAG, "createDebt() called with initialAmount=$initialAmount, name='$name', date=$date, reminderIntervalDays=$reminderIntervalDays")
         viewModelScope.launch {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
@@ -65,7 +79,11 @@ class MainViewModel(
                         name,
                         debtType,
                         date,
+                        reminderIntervalDays = reminderIntervalDays
                     )
+                }
+                if (reminderIntervalDays == -1) {
+                    ReminderWorker.enqueueImmediateTest(context)
                 }
                 _mainState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
@@ -79,66 +97,20 @@ class MainViewModel(
         }
     }
 
-    fun recordPayment(debtId: Long, amount: Long, date: Long?) {
-        Log.d(TAG, "recordPayment() called with debtId=$debtId, amount=$amount, date=$date")
-        viewModelScope.launch {
-            _mainState.update { it.copy(isLoading = true, paymentError = null) }
-            try {
-                withContext(Dispatchers.IO) { repository.recordPayment(debtId, amount, date) }
-                _mainState.update { it.copy(isLoading = false) }
-            } catch (e: Exception) {
-                _mainState.update {
-                    it.copy(
-                        isLoading = false,
-                        paymentError = e.message ?: "Failed to add payment"
-                    )
-                }
-            }
-        }
-    }
-
-    fun confirmAddPayment(debtId: Long, amount: Long, date: Long?) {
-        Log.d(TAG, "confirmAddPayment() called with debtId=$debtId, amount=$amount, date=$date")
-        viewModelScope.launch {
-            _mainState.update { it.copy(isLoading = true) }
-            recordPayment(debtId, amount, date)
-            _mainState.update { it.copy(isLoading = false, showPaymentDialog = false) }
-        }
-
-    }
-
-    fun showPaymentDialog(debt: Debt) {
-        Log.d(TAG, "showPaymentDialog() called for debtId=${debt.id}, name='${debt.name}', currentAmount=${debt.currentAmount}")
-        _mainState.update { it.copy(currentDebt = debt, showPaymentDialog = true) }
-    }
-
     fun showDebtDialog() {
         Log.d(TAG, "showDebtDialog() called")
         _mainState.update { it.copy(showDebtDialog = true) }
     }
 
-    fun confirmAddDebt(amount: Long, name: String, debtType: DebtType, date: Long?) {
-        Log.d(TAG, "confirmAddDebt() called with amount=$amount, name='$name', date=$date")
+    fun confirmAddDebt(amount: Long, name: String, debtType: DebtType, date: Long?, reminderIntervalDays: Int?) {
+        Log.d(TAG, "confirmAddDebt() called with amount=$amount, name='$name', date=$date, reminderIntervalDays=$reminderIntervalDays")
         _mainState.update { it.copy(isLoading = true) }
-        createDebt(amount, name, debtType, date)
+        createDebt(amount, name, debtType, date, reminderIntervalDays)
         _mainState.update { it.copy(isLoading = false, showDebtDialog = false) }
     }
 
     fun dismissDialogs() {
         Log.d(TAG, "dismissDialogs() called")
-        _mainState.update { it.copy(showPaymentDialog = false, showDebtDialog = false) }
-    }
-}
-
-class MainViewModelFactory(
-    private val repository: Repository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
-            return MainViewModel(
-                repository = repository
-            ) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        _mainState.update { it.copy(showDebtDialog = false) }
     }
 }

@@ -18,11 +18,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -30,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.debttracker.data.local.entity.Debt
@@ -49,6 +53,8 @@ import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
 import com.example.debttracker.ui.main.debtCard.RoundedLinearProgressIndicator
 import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
+import com.example.debttracker.ui.utils.getMessageTemplates
+import com.example.debttracker.ui.utils.shareMessage
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,6 +70,8 @@ fun BindDebtDetailsScreen(
 
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     if (state == null) {
         Box(
@@ -78,7 +86,9 @@ fun BindDebtDetailsScreen(
             onBack = onBack,
             onRecordPayment = { showPaymentDialog = true },
             onPaymentClick = onPaymentClick,
-            onDeleteDebtClick = { showDeleteConfirmDialog = true }
+            onDeleteDebtClick = { showDeleteConfirmDialog = true },
+            onShareClick = { showShareDialog = true },
+            onEditDebtClick = { showEditDialog = true }
         )
 
         if (showPaymentDialog) {
@@ -114,6 +124,25 @@ fun BindDebtDetailsScreen(
                 }
             )
         }
+
+        if (showShareDialog) {
+            ShareMessageDialog(
+                debt = state.debt,
+                paymentList = state.paymentList,
+                onDismiss = { showShareDialog = false }
+            )
+        }
+
+        if (showEditDialog) {
+            BindEditDebtDialog(
+                debt = state.debt,
+                onDismiss = { showEditDialog = false },
+                onConfirm = { name, initialAmount, createdAt, reminderIntervalDays ->
+                    viewModel.updateDebt(name, initialAmount, createdAt, reminderIntervalDays)
+                    showEditDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -123,7 +152,9 @@ fun DebtDetailsScreen(
     onBack: () -> Unit,
     onRecordPayment: () -> Unit,
     onPaymentClick: (Payment) -> Unit,
-    onDeleteDebtClick: () -> Unit
+    onDeleteDebtClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onEditDebtClick: () -> Unit
 ) {
 
     Scaffold(
@@ -143,7 +174,8 @@ fun DebtDetailsScreen(
                 DebtDetailsHeader(
                     debt = state.debt!!,
                     onBack = onBack,
-                    onDeleteDebtClick = onDeleteDebtClick
+                    onDeleteDebtClick = onDeleteDebtClick,
+                    onEditDebtClick = onEditDebtClick
                 )
             }
 
@@ -158,12 +190,25 @@ fun DebtDetailsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onRecordPayment
                 ) {
-
                     Icon(Icons.Default.Add, null)
-
                     Spacer(Modifier.width(8.dp))
-
                     Text("Отметить платеж")
+                }
+            }
+
+            item {
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onShareClick
+                ) {
+                    Icon(Icons.Default.Share, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (state.debt.type == DebtType.OWE_ME)
+                            "Напомнить о платеже"
+                        else
+                            "Сообщить об оплате"
+                    )
                 }
             }
 
@@ -191,7 +236,8 @@ fun DebtDetailsScreen(
 private fun DebtDetailsHeader(
     debt: Debt,
     onBack: () -> Unit,
-    onDeleteDebtClick: () -> Unit
+    onDeleteDebtClick: () -> Unit,
+    onEditDebtClick: () -> Unit
 ) {
 
     var showMenu by remember { mutableStateOf(false) }
@@ -201,7 +247,6 @@ private fun DebtDetailsHeader(
     ) {
 
         IconButton(onClick = onBack) {
-
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 null
@@ -247,7 +292,6 @@ private fun DebtDetailsHeader(
             IconButton(
                 onClick = { showMenu = true }
             ) {
-
                 Icon(
                     Icons.Default.MoreVert,
                     null
@@ -258,6 +302,13 @@ private fun DebtDetailsHeader(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
             ) {
+                DropdownMenuItem(
+                    text = { Text("Редактировать") },
+                    onClick = {
+                        showMenu = false
+                        onEditDebtClick()
+                    }
+                )
                 DropdownMenuItem(
                     text = { Text("Удалить долг", color = Color(0xFFE4564F)) },
                     onClick = {
@@ -393,6 +444,76 @@ fun PaymentHistoryCard(
             }
         }
     }
+}
+
+@Composable
+private fun ShareMessageDialog(
+    debt: Debt,
+    paymentList: List<Payment>,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val lastPaymentAmount = paymentList.firstOrNull()?.amount
+    val templates = remember(debt, lastPaymentAmount) { getMessageTemplates(debt, lastPaymentAmount) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (debt.type == DebtType.OWE_ME)
+                    "Напомнить о платеже"
+                else
+                    "Сообщить об оплате"
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Выберите текст сообщения:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                templates.forEach { template ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                shareMessage(context, template.text)
+                                onDismiss()
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                template.label,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                template.text,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
 }
 
 private fun formatAmount(amount: Long): String =

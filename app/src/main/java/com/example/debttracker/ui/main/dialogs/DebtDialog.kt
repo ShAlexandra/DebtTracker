@@ -20,6 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,7 +53,7 @@ import java.util.Locale
 @Composable
 fun BindDebtDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, amount: Long, debtType: DebtType, date: Long?) -> Unit
+    onConfirm: (name: String, amount: Long, debtType: DebtType, date: Long?, reminderIntervalDays: Int?) -> Unit
 ) {
 
     var name by remember { mutableStateOf("") }
@@ -66,6 +68,16 @@ fun BindDebtDialog(
 
     var selectedDateMillis by remember { mutableStateOf<Long?>(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var reminderIntervalDays by remember { mutableStateOf<Int?>(null) }
+    var showReminderDropdown by remember { mutableStateOf(false) }
+
+    val reminderOptions = listOf(
+        null to "Без напоминаний",
+        1 to "Каждый день",
+        3 to "Раз в 3 дня",
+        7 to "Раз в неделю",
+        30 to "Раз в месяц"
+    )
     val displayDate = selectedDateMillis?.let {
         SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(it))
     } ?: ""
@@ -189,8 +201,47 @@ fun BindDebtDialog(
                             .matchParentSize()
                             .padding(top = 8.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { showDatePicker = true }
+                        .clickable { showDatePicker = true }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = reminderOptions.firstOrNull { it.first == reminderIntervalDays }?.second
+                            ?: "Без напоминаний",
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Напоминания") },
+                        readOnly = true,
+                        enabled = false,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = textFieldColors
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showReminderDropdown = true }
+                    )
+
+                    DropdownMenu(
+                        expanded = showReminderDropdown,
+                        onDismissRequest = { showReminderDropdown = false }
+                    ) {
+                        reminderOptions.forEach { (days, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    reminderIntervalDays = days
+                                    showReminderDropdown = false
+                                }
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -201,7 +252,7 @@ fun BindDebtDialog(
                 shape = RoundedCornerShape(12.dp),
                 onClick = {
                     if (isValid) {
-                        onConfirm(name.trim(), parsedAmount, debtType, selectedDateMillis)
+                        onConfirm(name.trim(), parsedAmount, debtType, selectedDateMillis, reminderIntervalDays)
                     }
                 },
                 enabled = isValid

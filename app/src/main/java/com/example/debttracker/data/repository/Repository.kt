@@ -36,16 +36,18 @@ class Repository(private val database: AppDatabase) {
         name: String,
         debtType: DebtType,
         date: Long? = null,
-        id: Long? = null
+        id: Long? = null,
+        reminderIntervalDays: Int? = null
     ) {
-        Log.d(TAG, "createOrUpdateDebt() called with initialAmount=$initialAmount, name='$name', date=$date, id=$id")
+        Log.d(TAG, "createOrUpdateDebt() called with initialAmount=$initialAmount, name='$name', date=$date, id=$id, reminderIntervalDays=$reminderIntervalDays")
         if (id == null) {
             val debt = Debt(
                 initialAmount = initialAmount,
                 currentAmount = initialAmount,
                 createdAt = date ?: System.currentTimeMillis(),
                 name = name,
-                type = debtType
+                type = debtType,
+                reminderIntervalDays = reminderIntervalDays
             )
             Log.d(TAG, "createOrUpdateDebt() inserting new debt: $debt")
             debtDao.insertDebt(debt)
@@ -114,6 +116,28 @@ class Repository(private val database: AppDatabase) {
             paymentDao.deletePaymentsByDebtId(debtId)
             debtDao.deleteDebt(debtId)
         }
+    }
+
+    fun getDebtsWithReminders(): List<Debt>? {
+        Log.d(TAG, "getDebtsWithReminders() called")
+        return debtDao.getDebtsWithReminders()
+    }
+
+    suspend fun updateReminderTimestamp(debtId: Long, timestamp: Long) {
+        Log.d(TAG, "updateReminderTimestamp() called with debtId=$debtId, timestamp=$timestamp")
+        debtDao.updateReminderTimestamp(debtId, timestamp)
+    }
+
+    suspend fun updateDebt(
+        id: Long,
+        name: String,
+        initialAmount: Long,
+        currentAmount: Long,
+        createdAt: Long,
+        reminderIntervalDays: Int?
+    ) {
+        Log.d(TAG, "updateDebt() called with id=$id, name='$name', initialAmount=$initialAmount, currentAmount=$currentAmount, reminderIntervalDays=$reminderIntervalDays")
+        debtDao.updateDebt(id, name, initialAmount, currentAmount, createdAt, reminderIntervalDays)
     }
 
     companion object {

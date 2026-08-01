@@ -29,4 +29,13 @@ interface DebtDao {
 
     @Query("DELETE FROM debts WHERE id = :id")
     suspend fun deleteDebt(id: Long)
+
+    @Query("SELECT * FROM debts WHERE reminderIntervalDays IS NOT NULL")
+    fun getDebtsWithReminders(): List<Debt>?
+
+    @Query("UPDATE debts SET lastReminderTimestamp = :timestamp WHERE id = :id")
+    suspend fun updateReminderTimestamp(id: Long, timestamp: Long)
+
+    @Query("UPDATE debts SET name = :name, initialAmount = :initialAmount, currentAmount = :currentAmount, createdAt = :createdAt, reminderIntervalDays = :reminderIntervalDays WHERE id = :id")
+    suspend fun updateDebt(id: Long, name: String, initialAmount: Long, currentAmount: Long, createdAt: Long, reminderIntervalDays: Int?)
 }

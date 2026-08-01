@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.ui.main.debtCard.DebtCard
 import com.example.debttracker.ui.main.dialogs.BindDebtDialog
-import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
 
 @Composable
 fun BindMainScreen(
@@ -93,7 +92,6 @@ fun BindMainScreen(
                                 items(debts) { debt ->
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.showPaymentDialog(debt) },
                                         onDebtClick = { onDebtClick(it.id!!) }
                                     )
                                 }
@@ -103,7 +101,6 @@ fun BindMainScreen(
                                 items(debts) { debt ->
                                     DebtCard(
                                         debt = debt,
-                                        onRecordPayment = { viewModel.showPaymentDialog(debt) },
                                         onDebtClick = { onDebtClick(it.id!!) }
                                     )
                                 }
@@ -119,23 +116,10 @@ fun BindMainScreen(
         }
     }
 
-    if (state.showPaymentDialog) {
-        if (state.currentDebt!=null) {
-            BindPaymentDialog(
-                debt = state.currentDebt,
-                onDismiss = { viewModel.dismissDialogs() },
-                onConfirm = { debtId, amount, date -> viewModel.confirmAddPayment(debtId, amount, date) }
-            )
-        } else {
-            viewModel.dismissDialogs()
-        }
-
-    }
-
     if (state.showDebtDialog) {
         BindDebtDialog(
             onDismiss = { viewModel.dismissDialogs() },
-            onConfirm = { name, amount, debtType, date -> viewModel.confirmAddDebt(amount, name, debtType, date) }
+        onConfirm = { name, amount, debtType, date, reminderIntervalDays -> viewModel.confirmAddDebt(amount, name, debtType, date, reminderIntervalDays) }
         )
     }
 }
