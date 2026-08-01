@@ -44,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,6 +52,8 @@ import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
 import com.example.debttracker.ui.main.debtCard.RoundedLinearProgressIndicator
 import com.example.debttracker.ui.main.dialogs.BindPaymentDialog
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 import com.example.debttracker.ui.utils.getMessageTemplates
 import com.example.debttracker.ui.utils.shareMessage
 import java.text.NumberFormat
@@ -105,8 +106,8 @@ fun BindDebtDetailsScreen(
         if (showDeleteConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirmDialog = false },
-                title = { Text("Удалить долг") },
-                text = { Text("Вы уверены, что хотите удалить долг «${state.debt.name}»? Все связанные платежи также будут удалены.") },
+                title = { Text(AppStrings.detailsDeleteDebtTitle) },
+                text = { Text(AppStrings.detailsDeleteDebtMessage(state.debt.name)) },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -114,12 +115,12 @@ fun BindDebtDetailsScreen(
                             viewModel.deleteDebt { onBack() }
                         }
                     ) {
-                        Text("Удалить", color = Color(0xFFE4564F))
+                        Text(AppStrings.detailsDeleteButton, color = AppColors.remainingRed)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                        Text("Отмена")
+                        Text(AppStrings.buttonCancel)
                     }
                 }
             )
@@ -192,7 +193,7 @@ fun DebtDetailsScreen(
                 ) {
                     Icon(Icons.Default.Add, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Отметить платеж")
+                    Text(AppStrings.detailsRecordPayment)
                 }
             }
 
@@ -205,9 +206,9 @@ fun DebtDetailsScreen(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         if (state.debt.type == DebtType.OWE_ME)
-                            "Напомнить о платеже"
+                            AppStrings.detailsRemindPayment
                         else
-                            "Сообщить об оплате"
+                            AppStrings.detailsReportPayment
                     )
                 }
             }
@@ -215,7 +216,7 @@ fun DebtDetailsScreen(
             item {
 
                 Text(
-                    "История платежей",
+                    AppStrings.detailsPaymentHistory,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -267,23 +268,17 @@ private fun DebtDetailsHeader(
 
             Spacer(Modifier.height(4.dp))
 
+            val debtTypeText = if (debt.type == DebtType.OWE_ME) AppStrings.typeOweMe else AppStrings.typeIOwe
+            val chipBgColor = if (debt.type == DebtType.OWE_ME) AppColors.chipOweMeBackground else AppColors.chipIOweBackground
+
             AssistChip(
                 onClick = {},
                 enabled = false,
                 label = {
-                    Text(
-                        if (debt.type == DebtType.OWE_ME)
-                            "Мне должны"
-                        else
-                            "Я должен"
-                    )
+                    Text(debtTypeText)
                 },
                 colors = AssistChipDefaults.assistChipColors(
-                    containerColor =
-                        if (debt.type == DebtType.OWE_ME)
-                            Color(0xFF1F3B20)
-                        else
-                            Color(0xFF442323)
+                    containerColor = chipBgColor
                 )
             )
         }
@@ -303,14 +298,14 @@ private fun DebtDetailsHeader(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Редактировать") },
+                    text = { Text(AppStrings.detailsEditOption) },
                     onClick = {
                         showMenu = false
                         onEditDebtClick()
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Удалить долг", color = Color(0xFFE4564F)) },
+                    text = { Text(AppStrings.detailsDeleteOption, color = AppColors.remainingRed) },
                     onClick = {
                         showMenu = false
                         onDeleteDebtClick()
@@ -330,6 +325,8 @@ private fun DebtProgressCard(
         1f - debt.currentAmount.toFloat() /
                 debt.initialAmount.toFloat()
 
+    val remainingColor = if (debt.type == DebtType.OWE_ME) AppColors.remainingGreen else AppColors.remainingRed
+
     Card(
         shape = RoundedCornerShape(20.dp)
     ) {
@@ -346,17 +343,11 @@ private fun DebtProgressCard(
 
                 Column {
 
-                    Text("Осталось")
+                    Text(AppStrings.progressRemaining)
 
                     Text(
                         formatAmount(debt.currentAmount),
-                        color = when (debt.type) {
-                            DebtType.OWE_ME ->
-                                Color(0xFF59C65A)
-
-                            DebtType.I_OWE ->
-                                Color(0xFFE4564F)
-                        },
+                        color = remainingColor,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -366,7 +357,7 @@ private fun DebtProgressCard(
                     horizontalAlignment = Alignment.End
                 ) {
 
-                    Text("Всего")
+                    Text(AppStrings.progressTotal)
 
                     Text(
                         formatAmount(debt.initialAmount),
@@ -381,14 +372,8 @@ private fun DebtProgressCard(
                 progress = progress,
                 modifier = Modifier
                     .fillMaxWidth(),
-                color = when (debt.type) {
-                    DebtType.OWE_ME ->
-                        Color(0xFF59C65A)
-
-                    DebtType.I_OWE ->
-                        Color(0xFFE4564F)
-                },
-                trackColor = Color.Gray,
+                color = remainingColor,
+                trackColor = AppColors.progressTrack,
                 height = 8.dp
             )
 
@@ -433,7 +418,7 @@ fun PaymentHistoryCard(
 
                     Text(
                         "+${formatAmount(payment.amount)}",
-                        color = Color(0xFF59C65A),
+                        color = AppColors.remainingGreen,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -461,9 +446,9 @@ private fun ShareMessageDialog(
         title = {
             Text(
                 if (debt.type == DebtType.OWE_ME)
-                    "Напомнить о платеже"
+                    AppStrings.shareDialogTitleRemind
                 else
-                    "Сообщить об оплате"
+                    AppStrings.shareDialogTitleReport
             )
         },
         text = {
@@ -471,7 +456,7 @@ private fun ShareMessageDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Выберите текст сообщения:",
+                    AppStrings.shareDialogChooseText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -510,7 +495,7 @@ private fun ShareMessageDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text(AppStrings.buttonCancel)
             }
         }
     )

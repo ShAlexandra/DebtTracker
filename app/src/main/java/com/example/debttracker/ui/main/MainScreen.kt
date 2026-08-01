@@ -23,13 +23,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.ui.main.debtCard.DebtCard
 import com.example.debttracker.ui.main.dialogs.BindDebtDialog
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 
 @Composable
 fun BindMainScreen(
@@ -45,7 +46,7 @@ fun BindMainScreen(
                 onClick = { viewModel.showDebtDialog() },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить долг")
+                Icon(Icons.Default.Add, contentDescription = AppStrings.addDebtContentDescription)
             }
         }
     ) { padding ->
@@ -65,7 +66,7 @@ fun BindMainScreen(
 
 
                 Text(
-                    text = "Раздам долги",
+                    text = AppStrings.mainScreenTitle,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
@@ -130,7 +131,7 @@ fun LoadingView() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.3f)),
+            .background(AppColors.loadingOverlay),
         contentAlignment = Alignment.Center
     ) {
 
@@ -147,7 +148,7 @@ fun ErrorView(message: String) {
     ) {
 
         Text(
-            text = "Ошибка",
+            text = AppStrings.errorTitle,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.error
         )
@@ -172,14 +173,14 @@ fun EmptyView() {
     ) {
 
         Text(
-            text = "Нет долгов",
+            text = AppStrings.emptyTitle,
             style = MaterialTheme.typography.titleLarge
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Нажми + чтобы добавить",
+            text = AppStrings.emptyHint,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -16,12 +16,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,13 +36,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.DebtType
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 import com.example.debttracker.ui.utils.AmountVisualTransformation
 import kotlinx.coroutines.android.awaitFrame
 import java.text.SimpleDateFormat
@@ -72,11 +73,11 @@ fun BindDebtDialog(
     var showReminderDropdown by remember { mutableStateOf(false) }
 
     val reminderOptions = listOf(
-        null to "Без напоминаний",
-        1 to "Каждый день",
-        3 to "Раз в 3 дня",
-        7 to "Раз в неделю",
-        30 to "Раз в месяц"
+        null to AppStrings.reminderNone,
+        1 to AppStrings.reminderEveryDay,
+        3 to AppStrings.reminderEvery3Days,
+        7 to AppStrings.reminderEveryWeek,
+        30 to AppStrings.reminderEveryMonth
     )
     val displayDate = selectedDateMillis?.let {
         SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(it))
@@ -117,11 +118,11 @@ fun BindDebtDialog(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Назад"
+                        contentDescription = AppStrings.backContentDescription
                     )
                 }
                 Text(
-                    text = "Добавить долг",
+                    text = AppStrings.dialogTitleNewDebt,
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -144,7 +145,7 @@ fun BindDebtDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Имя") },
+                    label = { Text(AppStrings.labelName) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -157,7 +158,7 @@ fun BindDebtDialog(
                     onValueChange = { input ->
                         amount = input.filter { it.isDigit() && !(input.length == 1 && it == '0') }
                     },
-                    label = { Text("Сумма") },
+                    label = { Text(AppStrings.labelAmount) },
                     singleLine = true,
                     isError = rawAmount.isNotEmpty() && parsedAmount == null,
                     modifier = Modifier.fillMaxWidth(),
@@ -170,7 +171,7 @@ fun BindDebtDialog(
 
                 if (rawAmount.isNotEmpty() && parsedAmount == null) {
                     Text(
-                        text = "Введите корректную сумму",
+                        text = AppStrings.invalidAmountError,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -186,7 +187,7 @@ fun BindDebtDialog(
                         value = displayDate,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Дата выдачи долга") },
+                        label = { Text(AppStrings.labelDate) },
                         readOnly = true,
                         enabled = false,
                         trailingIcon = {
@@ -210,10 +211,10 @@ fun BindDebtDialog(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = reminderOptions.firstOrNull { it.first == reminderIntervalDays }?.second
-                            ?: "Без напоминаний",
+                            ?: AppStrings.reminderNone,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Напоминания") },
+                        label = { Text(AppStrings.labelReminders) },
                         readOnly = true,
                         enabled = false,
                         shape = RoundedCornerShape(8.dp),
@@ -258,8 +259,8 @@ fun BindDebtDialog(
                 enabled = isValid
             ) {
                 Text(
-                    text = "Сохранить",
-                    color = Color.White,
+                    text = AppStrings.buttonSave,
+                    color = AppColors.white,
                     fontSize = 16.sp
                 )
             }
@@ -281,12 +282,12 @@ fun BindDebtDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("ОК")
+                    Text(AppStrings.buttonOk)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Отмена")
+                    Text(AppStrings.buttonCancel)
                 }
             }
         ) {

@@ -16,11 +16,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.DebtType
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 
 @Composable
 fun DebtTypeSelector(
@@ -35,7 +36,7 @@ fun DebtTypeSelector(
 
         DebtTypeCard(
             modifier = Modifier.weight(1f),
-            title = "Мне должны",
+            title = AppStrings.typeOweMe,
             emoji = "↑",
             isSelected = selectedType == DebtType.OWE_ME,
             onClick = {
@@ -45,7 +46,7 @@ fun DebtTypeSelector(
 
         DebtTypeCard(
             modifier = Modifier.weight(1f),
-            title = "Я должен",
+            title = AppStrings.typeIOwe,
             emoji = "↓",
             isSelected = selectedType == DebtType.I_OWE,
             onClick = {
@@ -63,24 +64,17 @@ private fun DebtTypeCard(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val isOweMe = title == AppStrings.typeOweMe
+
     val selectedColor = when {
-        isSelected && title == "Мне должны" ->
-            Color(0xFF4CAF50)
-
-        isSelected && title == "Я должен" ->
-            Color(0xFFE53935)
-
-        else ->
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        isSelected && isOweMe -> AppColors.oweMeGreen
+        isSelected && !isOweMe -> AppColors.iOweRed
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
     }
 
-    val variantColor = when {
-        title == "Мне должны" ->
-            Color(0xFF4CAF50)
+    val variantColor = if (isOweMe) AppColors.oweMeGreen else AppColors.iOweRed
 
-        else ->
-            Color(0xFFE53935)
-    }
+    val containerColor = if (isOweMe) AppColors.oweMeCardBackground else AppColors.iOweCardBackground
 
     Card(
         onClick = onClick,
@@ -92,7 +86,7 @@ private fun DebtTypeCard(
             color = selectedColor
         ),
         colors = CardDefaults.cardColors(
-            containerColor = variantColor.copy(alpha = 0.1f)
+            containerColor = containerColor
         )
     ) {
 

@@ -37,13 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.Debt
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 import com.example.debttracker.ui.utils.AmountVisualTransformation
 import kotlinx.coroutines.android.awaitFrame
 import java.text.SimpleDateFormat
@@ -70,11 +71,11 @@ fun BindEditDebtDialog(
     val displayDate = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(selectedDateMillis))
 
     val reminderOptions = listOf(
-        null to "Без напоминаний",
-        1 to "Каждый день",
-        3 to "Раз в 3 дня",
-        7 to "Раз в неделю",
-        30 to "Раз в месяц"
+        null to AppStrings.reminderNone,
+        1 to AppStrings.reminderEveryDay,
+        3 to AppStrings.reminderEvery3Days,
+        7 to AppStrings.reminderEveryWeek,
+        30 to AppStrings.reminderEveryMonth
     )
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
@@ -112,11 +113,11 @@ fun BindEditDebtDialog(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Назад"
+                        contentDescription = AppStrings.backContentDescription
                     )
                 }
                 Text(
-                    text = "Редактировать долг",
+                    text = AppStrings.dialogTitleEditDebt,
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -128,7 +129,7 @@ fun BindEditDebtDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Имя") },
+                    label = { Text(AppStrings.labelName) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,7 +144,7 @@ fun BindEditDebtDialog(
                     onValueChange = { input ->
                         amount = input.filter { it.isDigit() && !(input.length == 1 && it == '0') }
                     },
-                    label = { Text("Сумма долга") },
+                    label = { Text(AppStrings.labelDebtAmount) },
                     singleLine = true,
                     isError = rawAmount.isNotEmpty() && parsedAmount == null,
                     modifier = Modifier.fillMaxWidth(),
@@ -154,7 +155,7 @@ fun BindEditDebtDialog(
 
                 if (rawAmount.isNotEmpty() && parsedAmount == null) {
                     Text(
-                        text = "Введите корректную сумму",
+                        text = AppStrings.invalidAmountError,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -167,7 +168,7 @@ fun BindEditDebtDialog(
                         value = displayDate,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Дата выдачи долга") },
+                        label = { Text(AppStrings.labelDate) },
                         readOnly = true,
                         enabled = false,
                         trailingIcon = {
@@ -191,10 +192,10 @@ fun BindEditDebtDialog(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = reminderOptions.firstOrNull { it.first == reminderIntervalDays }?.second
-                            ?: "Без напоминаний",
+                            ?: AppStrings.reminderNone,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Напоминания") },
+                        label = { Text(AppStrings.labelReminders) },
                         readOnly = true,
                         enabled = false,
                         shape = RoundedCornerShape(8.dp),
@@ -238,8 +239,8 @@ fun BindEditDebtDialog(
                 enabled = isValid
             ) {
                 Text(
-                    text = "Сохранить",
-                    color = Color.White,
+                    text = AppStrings.buttonSave,
+                    color = AppColors.white,
                     fontSize = 16.sp
                 )
             }
@@ -257,12 +258,12 @@ fun BindEditDebtDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("ОК")
+                    Text(AppStrings.buttonOk)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Отмена")
+                    Text(AppStrings.buttonCancel)
                 }
             }
         ) {

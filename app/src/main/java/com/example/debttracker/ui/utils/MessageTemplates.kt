@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
+import com.example.debttracker.ui.theme.AppStrings
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -21,36 +22,36 @@ fun getMessageTemplates(debt: Debt, lastPaymentAmount: Long? = null): List<Messa
         val amount = formatter.format(debt.currentAmount)
         listOf(
             MessageTemplate(
-                "Вежливое напоминание",
-                "Привет! Напоминаю про долг в размере $amount ₽. Буду благодарен, если сможешь вернуть при возможности 🙏"
+                AppStrings.msgPoliteReminderLabel,
+                AppStrings.msgPoliteReminder(amount)
             ),
             MessageTemplate(
-                "Прямое напоминание",
-                "Привет! Хотел уточнить насчёт долга ($amount ₽) — когда планируешь вернуть?"
+                AppStrings.msgDirectReminderLabel,
+                AppStrings.msgDirectReminder(amount)
             ),
             MessageTemplate(
-                "Настойчивое",
-                "Привет! Долг $amount ₽ всё ещё актуален. Давай решим вопрос на этой неделе, пожалуйста."
+                AppStrings.msgPersistentLabel,
+                AppStrings.msgPersistent(amount)
             ),
             MessageTemplate(
-                "Короткое",
-                "Привет! Не забудь про долг $amount ₽ 🙂"
+                AppStrings.msgShortRemindLabel,
+                AppStrings.msgShortRemind(amount)
             )
         )
     } else {
         val paymentAmount = formatter.format(lastPaymentAmount ?: debt.currentAmount)
         listOf(
             MessageTemplate(
-                "Вежливое уведомление",
-                "Привет! Сообщаю, что перевёл $paymentAmount ₽. Спасибо за терпение! 🙏"
+                AppStrings.msgPoliteNotificationLabel,
+                AppStrings.msgPoliteNotification(paymentAmount)
             ),
             MessageTemplate(
-                "С деталями",
-                "Привет! Я выплатил платёж в размере $paymentAmount ₽. Проверь, пожалуйста, поступление."
+                AppStrings.msgDetailedLabel,
+                AppStrings.msgDetailed(paymentAmount)
             ),
             MessageTemplate(
-                "Короткое",
-                "Привет! Перевёл $paymentAmount ₽ ✌️"
+                AppStrings.msgShortReportLabel,
+                AppStrings.msgShortReport(paymentAmount)
             )
         )
     }
@@ -61,5 +62,5 @@ fun shareMessage(context: Context, message: String) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, message)
     }
-    context.startActivity(Intent.createChooser(intent, "Отправить через"))
+    context.startActivity(Intent.createChooser(intent, AppStrings.shareChooserTitle))
 }

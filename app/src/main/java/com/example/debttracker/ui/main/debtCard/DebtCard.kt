@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
+import com.example.debttracker.ui.theme.AppColors
+import com.example.debttracker.ui.theme.AppStrings
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -32,13 +34,7 @@ fun DebtCard(
     onDebtClick: (debt: Debt) -> Unit
 ) {
 
-    val variantColor = when {
-        debt.type == DebtType.OWE_ME ->
-            Color(0xFF4CAF50)
-
-        else ->
-            Color(0xFFE53935)
-    }
+    val variantColor = if (debt.type == DebtType.OWE_ME) AppColors.oweMeGreen else AppColors.iOweRed
 
     val progress = 1f - (debt.currentAmount.toFloat() / debt.initialAmount.toFloat())
 
@@ -67,13 +63,13 @@ fun DebtCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Осталось: ${formatAmount(debt.currentAmount)} ₽",
+                    text = AppStrings.remainingLabel(formatAmount(debt.currentAmount)),
                     fontSize = 20.sp,
                     color = variantColor
                 )
 
                 Text(
-                    text = "Всего: ${formatAmount(debt.initialAmount)} ₽",
+                    text = AppStrings.totalLabel(formatAmount(debt.initialAmount)),
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -84,7 +80,7 @@ fun DebtCard(
                     progress = progress,
                     modifier = Modifier.fillMaxWidth(),
                     color = variantColor,
-                    trackColor = Color.Gray,
+                    trackColor = AppColors.progressTrack,
                     height = 10.dp
                 )
 
@@ -98,7 +94,7 @@ fun RoundedLinearProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.secondary,
-    trackColor: Color = Color.Gray,
+    trackColor: Color = AppColors.progressTrack,
     height: Dp = 4.dp
 ) {
     Canvas(
@@ -106,9 +102,8 @@ fun RoundedLinearProgressIndicator(
             .fillMaxWidth()
             .height(height)
     ) {
-        val cornerPx = (height / 2).toPx()  // Полностью скруглённые края
+        val cornerPx = (height / 2).toPx()
 
-        // Трек (фон) - весь со скруглениями
         drawRoundRect(
             color = trackColor,
             topLeft = Offset.Zero,
@@ -116,7 +111,6 @@ fun RoundedLinearProgressIndicator(
             cornerRadius = CornerRadius(cornerPx, cornerPx)
         )
 
-        // Прогресс - тоже со скруглениями, но без разрыва
         val progressWidth = size.width * progress.coerceIn(0f, 1f)
         if (progressWidth > 0) {
             drawRoundRect(
