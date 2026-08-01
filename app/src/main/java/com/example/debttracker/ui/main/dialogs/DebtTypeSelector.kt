@@ -1,7 +1,6 @@
 package com.example.debttracker.ui.main.dialogs
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -84,10 +83,10 @@ private fun DebtTypeCard(
     }
 
     Card(
-        modifier = modifier
-            .height(120.dp)
-            .clickable(onClick = onClick),
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .height(120.dp),
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
             color = selectedColor
