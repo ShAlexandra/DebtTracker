@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.debttracker.data.repository.Repository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DebtDetailsViewModel(
     private val repository: Repository,
@@ -75,17 +77,19 @@ class DebtDetailsViewModel(
         Log.d(TAG, "updateDebt() called with id=$debtId, name='$name', initialAmount=$initialAmount, reminderIntervalDays=$reminderIntervalDays")
         viewModelScope.launch {
             try {
-                val currentDebt = repository.getCurrentDebt(debtId) ?: return@launch
-                val paid = currentDebt.initialAmount - currentDebt.currentAmount
-                val newCurrentAmount = (initialAmount - paid).coerceAtLeast(0L)
-                repository.updateDebt(
-                    id = debtId,
-                    name = name,
-                    initialAmount = initialAmount,
-                    currentAmount = newCurrentAmount,
-                    createdAt = createdAt,
-                    reminderIntervalDays = reminderIntervalDays
-                )
+                withContext(Dispatchers.IO) {
+                    val currentDebt = repository.getCurrentDebt(debtId) ?: return@withContext
+                    val paid = currentDebt.initialAmount - currentDebt.currentAmount
+                    val newCurrentAmount = (initialAmount - paid).coerceAtLeast(0L)
+                    repository.updateDebt(
+                        id = debtId,
+                        name = name,
+                        initialAmount = initialAmount,
+                        currentAmount = newCurrentAmount,
+                        createdAt = createdAt,
+                        reminderIntervalDays = reminderIntervalDays
+                    )
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "updateDebt() failed: ${e.message}")
             }
