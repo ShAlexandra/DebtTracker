@@ -18,6 +18,7 @@ object AppStrings {
     // ── Auth ──
     const val authUsernameLabel = "Логин"
     const val authPasswordLabel = "Пароль"
+    const val authRememberMe = "Запомнить меня"
     const val authLoginButton = "Войти"
     const val authRegisterButton = "Зарегистрироваться"
     const val authToggleToRegister = "Нет аккаунта? Зарегистрироваться"

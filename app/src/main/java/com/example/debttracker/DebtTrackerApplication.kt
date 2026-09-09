@@ -1,6 +1,7 @@
 package com.example.debttracker
 
 import android.app.Application
+import com.example.debttracker.data.CredentialsStore
 import com.example.debttracker.data.remote.ApiClient
 import com.example.debttracker.data.remote.AuthTokenStore
 import com.example.debttracker.data.repository.Repository
@@ -9,6 +10,8 @@ import com.example.debttracker.ui.utils.ReminderWorker
 class DebtTrackerApplication : Application() {
 
     val authTokenStore: AuthTokenStore by lazy { AuthTokenStore(this) }
+
+    val credentialsStore: CredentialsStore by lazy { CredentialsStore(this) }
 
     val sessionManager: SessionManager by lazy { SessionManager(authTokenStore) }
 

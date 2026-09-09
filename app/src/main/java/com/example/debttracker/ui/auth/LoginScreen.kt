@@ -1,7 +1,9 @@
 package com.example.debttracker.ui.auth
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -35,8 +38,9 @@ fun LoginScreen(viewModel: AuthViewModel) {
     val state = viewModel.state.collectAsState().value
 
     var isRegisterMode by rememberSaveable { mutableStateOf(false) }
-    var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf(state.savedUsername) }
+    var password by rememberSaveable { mutableStateOf(state.savedPassword) }
+    var rememberMe by rememberSaveable { mutableStateOf(true) }
 
     val canSubmit = !state.isLoading && username.isNotBlank() && password.isNotBlank()
 
@@ -79,6 +83,24 @@ fun LoginScreen(viewModel: AuthViewModel) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { rememberMe = !rememberMe },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberMe,
+                    onCheckedChange = { rememberMe = it }
+                )
+                Text(
+                    text = AppStrings.authRememberMe,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
             if (state.errorMessage != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -93,9 +115,9 @@ fun LoginScreen(viewModel: AuthViewModel) {
             Button(
                 onClick = {
                     if (isRegisterMode) {
-                        viewModel.register(username, password)
+                        viewModel.register(username, password, rememberMe)
                     } else {
-                        viewModel.login(username, password)
+                        viewModel.login(username, password, rememberMe)
                     }
                 },
                 enabled = canSubmit,

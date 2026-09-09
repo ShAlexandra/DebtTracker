@@ -21,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.debttracker.data.CredentialsStore
 import com.example.debttracker.data.repository.Repository
 import com.example.debttracker.ui.auth.AuthViewModel
 import com.example.debttracker.ui.auth.LoginScreen
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
                 AppNavGraph(
                     repository = app.repository,
                     sessionManager = app.sessionManager,
+                    credentialsStore = app.credentialsStore,
                     deepLinkDebtId = deepLinkDebtId
                 )
             }
@@ -75,6 +77,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavGraph(
     repository: Repository,
     sessionManager: SessionManager,
+    credentialsStore: CredentialsStore,
     deepLinkDebtId: Long? = null
 ) {
     val navController = rememberNavController()
@@ -103,7 +106,7 @@ fun AppNavGraph(
     ) {
         composable(Screen.Auth.route) {
             val viewModel: AuthViewModel =
-                viewModel(factory = AuthViewModel.factory(repository, sessionManager))
+                viewModel(factory = AuthViewModel.factory(repository, sessionManager, credentialsStore))
             LoginScreen(viewModel)
         }
 

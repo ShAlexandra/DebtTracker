@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.debttracker.SessionManager
+import com.example.debttracker.data.CredentialsStore
 import com.example.debttracker.data.repository.Repository
 import com.example.debttracker.ui.theme.AppStrings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,18 +16,27 @@ import retrofit2.HttpException
 
 data class AuthState(
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val savedUsername: String = "",
+    val savedPassword: String = ""
 )
 
 class AuthViewModel(
     private val repository: Repository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val credentialsStore: CredentialsStore
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    fun login(username: String, password: String) {
+    init {
+        credentialsStore.load()?.let { (username, password) ->
+            _state.update { it.copy(savedUsername = username, savedPassword = password) }
+        }
+    }
+
+    fun login(username: String, password: String, rememberMe: Boolean) {
         if (username.isBlank() || password.isBlank()) {
             _state.update { it.copy(errorMessage = AppStrings.authEmptyFieldsError) }
             return
@@ -35,8 +45,7 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 repository.login(username.trim(), password)
-                sessionManager.onLoggedIn()
-                _state.update { it.copy(isLoading = false) }
+                onAuthSuccess(username.trim(), password, rememberMe)
             } catch (e: Exception) {
                 _state.update {
                     it.copy(isLoading = false, errorMessage = mapAuthError(e))
@@ -45,7 +54,7 @@ class AuthViewModel(
         }
     }
 
-    fun register(username: String, password: String) {
+    fun register(username: String, password: String, rememberMe: Boolean) {
         if (username.isBlank() || password.isBlank()) {
             _state.update { it.copy(errorMessage = AppStrings.authEmptyFieldsError) }
             return
@@ -58,14 +67,23 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 repository.register(username.trim(), password)
-                sessionManager.onLoggedIn()
-                _state.update { it.copy(isLoading = false) }
+                onAuthSuccess(username.trim(), password, rememberMe)
             } catch (e: Exception) {
                 _state.update {
                     it.copy(isLoading = false, errorMessage = mapAuthError(e))
                 }
             }
         }
+    }
+
+    private fun onAuthSuccess(username: String, password: String, rememberMe: Boolean) {
+        if (rememberMe) {
+            credentialsStore.save(username, password)
+        } else {
+            credentialsStore.clear()
+        }
+        sessionManager.onLoggedIn()
+        _state.update { it.copy(isLoading = false) }
     }
 
     fun clearError() {
@@ -79,12 +97,17 @@ class AuthViewModel(
     }
 
     companion object {
-        fun factory(repository: Repository, sessionManager: SessionManager): ViewModelProvider.Factory =
+        fun factory(
+            repository: Repository,
+            sessionManager: SessionManager,
+            credentialsStore: CredentialsStore
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return AuthViewModel(repository, sessionManager) as T
+                    return AuthViewModel(repository, sessionManager, credentialsStore) as T
                 }
             }
     }
 }
+
