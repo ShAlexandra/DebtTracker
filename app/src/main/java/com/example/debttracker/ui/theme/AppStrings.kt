@@ -12,6 +12,18 @@ object AppStrings {
     const val emptyTitle = "Нет долгов"
     const val emptyHint = "Нажми + чтобы добавить"
     const val errorTitle = "Ошибка"
+    const val retryButton = "Повторить"
+    const val logoutButton = "Выйти"
+
+    // ── Auth ──
+    const val authUsernameLabel = "Логин"
+    const val authPasswordLabel = "Пароль"
+    const val authLoginButton = "Войти"
+    const val authRegisterButton = "Зарегистрироваться"
+    const val authToggleToRegister = "Нет аккаунта? Зарегистрироваться"
+    const val authToggleToLogin = "Уже есть аккаунт? Войти"
+    const val authEmptyFieldsError = "Введите логин и пароль"
+    const val authPasswordShortError = "Пароль должен быть не короче 6 символов"
 
     // ── Debt dialog ──
     const val dialogTitleNewDebt = "Добавить долг"

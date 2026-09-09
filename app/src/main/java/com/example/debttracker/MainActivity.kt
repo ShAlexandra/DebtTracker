@@ -10,6 +10,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,9 +21,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.debttracker.data.repository.Repository
+import com.example.debttracker.ui.auth.AuthViewModel
+import com.example.debttracker.ui.auth.LoginScreen
 import com.example.debttracker.ui.debtDetails.BindDebtDetailsScreen
+import com.example.debttracker.ui.debtDetails.DebtDetailsViewModel
 import com.example.debttracker.ui.debtDetails.DebtDetailsViewModelFactory
 import com.example.debttracker.ui.main.BindMainScreen
+import com.example.debttracker.ui.main.MainViewModel
 import com.example.debttracker.ui.navigation.Screen
 import com.example.debttracker.ui.theme.DebtTrackerTheme
 
@@ -55,6 +63,7 @@ class MainActivity : ComponentActivity() {
             DebtTrackerTheme(dynamicColor = false) {
                 AppNavGraph(
                     repository = app.repository,
+                    sessionManager = app.sessionManager,
                     deepLinkDebtId = deepLinkDebtId
                 )
             }
@@ -64,27 +73,52 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavGraph(
-    repository: com.example.debttracker.data.repository.Repository,
+    repository: Repository,
+    sessionManager: SessionManager,
     deepLinkDebtId: Long? = null
 ) {
     val navController = rememberNavController()
+    val isLoggedIn by sessionManager.isLoggedIn.collectAsState()
 
-    if (deepLinkDebtId != null) {
-        navController.navigate(Screen.DebtDetails.createRoute(deepLinkDebtId))
+    LaunchedEffect(isLoggedIn, deepLinkDebtId) {
+        if (!isLoggedIn) {
+            navController.navigate(Screen.Auth.route) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        } else {
+            navController.navigate(Screen.Main.route) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+            if (deepLinkDebtId != null) {
+                navController.navigate(Screen.DebtDetails.createRoute(deepLinkDebtId))
+            }
+        }
     }
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Main.route
+        startDestination = Screen.Auth.route
     ) {
+        composable(Screen.Auth.route) {
+            val viewModel: AuthViewModel =
+                viewModel(factory = AuthViewModel.factory(repository, sessionManager))
+            LoginScreen(viewModel)
+        }
+
         composable(Screen.Main.route) {
             val app = LocalContext.current.applicationContext as DebtTrackerApplication
-            val viewModel: com.example.debttracker.ui.main.MainViewModel =
-                viewModel(factory = com.example.debttracker.ui.main.MainViewModel.factory(app, repository))
+            val viewModel: MainViewModel =
+                viewModel(factory = MainViewModel.factory(app, repository))
             BindMainScreen(
                 viewModel = viewModel,
                 onDebtClick = { debtId ->
                     navController.navigate(Screen.DebtDetails.createRoute(debtId))
+                },
+                onLogout = {
+                    viewModel.logout()
+                    sessionManager.onLoggedOut()
                 }
             )
         }
@@ -96,7 +130,7 @@ fun AppNavGraph(
             )
         ) { backStackEntry ->
             val debtId = backStackEntry.arguments?.getLong("debtId") ?: return@composable
-            val viewModel: com.example.debttracker.ui.debtDetails.DebtDetailsViewModel =
+            val viewModel: DebtDetailsViewModel =
                 viewModel(factory = DebtDetailsViewModelFactory(repository, debtId))
             BindDebtDetailsScreen(
                 viewModel = viewModel,

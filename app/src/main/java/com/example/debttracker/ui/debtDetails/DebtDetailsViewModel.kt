@@ -5,13 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.debttracker.data.repository.Repository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class DebtDetailsViewModel(
     private val repository: Repository,
@@ -21,31 +18,33 @@ class DebtDetailsViewModel(
     private val _state = MutableStateFlow<DebtDetailsState?>(null)
     val state: StateFlow<DebtDetailsState?> = _state.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     companion object {
         private const val TAG = "DebtDetailsViewModel"
     }
 
     init {
-        observeDebtAndPayments()
+        load()
     }
 
-    private fun observeDebtAndPayments() {
-        Log.d(TAG, "observeDebtAndPayments() called with debtId=$debtId")
+    fun load() {
+        Log.d(TAG, "load() called with debtId=$debtId")
+        _errorMessage.value = null
         viewModelScope.launch {
-            repository.getDebtByIdFlow(debtId).combine(
-                repository.getPaymentsForDebt(debtId)
-            ) { debt, payments ->
-                Log.d(TAG, "combine emitted: debt=${debt?.name}, payments=${payments.size}")
-                if (debt != null) {
-                    DebtDetailsState(
-                        debt = debt,
-                        paymentList = payments
-                    )
-                } else {
-                    null
+            try {
+                val debt = repository.getDebtById(debtId)
+                if (debt == null) {
+                    _state.value = null
+                    _errorMessage.value = "Долг не найден"
+                    return@launch
                 }
-            }.collect { state ->
-                _state.value = state
+                val payments = repository.getPaymentsForDebt(debtId)
+                _state.value = DebtDetailsState(debt = debt, paymentList = payments)
+            } catch (e: Exception) {
+                Log.e(TAG, "load() failed: ${e.message}")
+                _errorMessage.value = Repository.parseErrorMessage(e)
             }
         }
     }
@@ -55,8 +54,10 @@ class DebtDetailsViewModel(
         viewModelScope.launch {
             try {
                 repository.recordPayment(debtId, amount, date)
+                load()
             } catch (e: Exception) {
                 Log.e(TAG, "recordPayment() failed: ${e.message}")
+                _errorMessage.value = Repository.parseErrorMessage(e)
             }
         }
     }
@@ -69,6 +70,7 @@ class DebtDetailsViewModel(
                 onDeleted()
             } catch (e: Exception) {
                 Log.e(TAG, "deleteDebt() failed: ${e.message}")
+                _errorMessage.value = Repository.parseErrorMessage(e)
             }
         }
     }
@@ -77,21 +79,11 @@ class DebtDetailsViewModel(
         Log.d(TAG, "updateDebt() called with id=$debtId, name='$name', initialAmount=$initialAmount, reminderIntervalDays=$reminderIntervalDays")
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    val currentDebt = repository.getCurrentDebt(debtId) ?: return@withContext
-                    val paid = currentDebt.initialAmount - currentDebt.currentAmount
-                    val newCurrentAmount = (initialAmount - paid).coerceAtLeast(0L)
-                    repository.updateDebt(
-                        id = debtId,
-                        name = name,
-                        initialAmount = initialAmount,
-                        currentAmount = newCurrentAmount,
-                        createdAt = createdAt,
-                        reminderIntervalDays = reminderIntervalDays
-                    )
-                }
+                repository.updateDebt(debtId, name, initialAmount, createdAt, reminderIntervalDays)
+                load()
             } catch (e: Exception) {
                 Log.e(TAG, "updateDebt() failed: ${e.message}")
+                _errorMessage.value = Repository.parseErrorMessage(e)
             }
         }
     }

@@ -17,10 +17,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.example.debttracker.DebtTrackerApplication
 import com.example.debttracker.MainActivity
-import com.example.debttracker.data.local.database.AppDatabase
 import com.example.debttracker.data.local.entity.DebtType
-import com.example.debttracker.data.repository.Repository
 import java.text.NumberFormat
 import java.util.Locale
 import android.util.Log
@@ -74,53 +73,58 @@ class ReminderWorker(
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "doWork() started")
-        val database = AppDatabase.getInstance(applicationContext)
-        val repository = Repository(database)
+        val repository = (applicationContext as DebtTrackerApplication).repository
 
-        val debts = repository.getDebtsWithReminders()
-        Log.d(TAG, "doWork() found ${debts?.size ?: 0} debts with reminders")
+        return try {
+            val debts = repository.getDebtsWithReminders()
+            Log.d(TAG, "doWork() found ${debts.size} debts with reminders")
 
-        if (debts == null || debts.isEmpty()) {
-            Log.d(TAG, "doWork() no debts with reminders, skipping")
-            return Result.success()
-        }
-
-        val now = System.currentTimeMillis()
-        val formatter = NumberFormat.getNumberInstance(
-            Locale.Builder().setLanguage("ru").setRegion("RU").build()
-        )
-
-        for (debt in debts) {
-            val days = debt.reminderIntervalDays ?: 1
-            val isTestMode = days == -1
-            val intervalMs = if (isTestMode) {
-                0L // всегда показывать
-            } else {
-                days * 24 * 60 * 60 * 1000L
+            if (debts.isEmpty()) {
+                Log.d(TAG, "doWork() no debts with reminders, skipping")
+                return Result.success()
             }
-            val lastReminder = debt.lastReminderTimestamp ?: debt.createdAt
 
-            val elapsed = now - lastReminder
-            Log.d(TAG, "doWork() debt ${debt.id} '${debt.name}': elapsed=${elapsed}ms, interval=${intervalMs}ms, currentAmount=${debt.currentAmount}, testMode=$isTestMode")
+            val now = System.currentTimeMillis()
+            val formatter = NumberFormat.getNumberInstance(
+                Locale.Builder().setLanguage("ru").setRegion("RU").build()
+            )
 
-            if ((isTestMode || elapsed >= intervalMs) && debt.currentAmount > 0) {
-                val amount = formatter.format(debt.currentAmount)
-                val (title, message) = if (debt.type == DebtType.OWE_ME) {
-                    "Напоминание о долге" to "${debt.name} должен вам $amount ₽. Не забудьте напомнить!"
+            for (debt in debts) {
+                val debtId = debt.id ?: continue
+                val days = debt.reminderIntervalDays ?: 1
+                val isTestMode = days == -1
+                val intervalMs = if (isTestMode) {
+                    0L // всегда показывать
                 } else {
-                    "Не забудьте оплатить долг" to "Вы должны ${debt.name} $amount ₽. Погасите задолженность!"
+                    days * 24 * 60 * 60 * 1000L
                 }
+                val lastReminder = debt.lastReminderTimestamp ?: debt.createdAt
 
-                Log.d(TAG, "doWork() showing notification for debt ${debt.id} '${debt.name}': $title")
-                showNotification(debt.id!!, title, message)
-                repository.updateReminderTimestamp(debt.id, now)
-            } else {
-                Log.d(TAG, "doWork() skipping debt ${debt.id} (elapsed < interval or fully paid)")
+                val elapsed = now - lastReminder
+                Log.d(TAG, "doWork() debt ${debt.id} '${debt.name}': elapsed=${elapsed}ms, interval=${intervalMs}ms, currentAmount=${debt.currentAmount}, testMode=$isTestMode")
+
+                if ((isTestMode || elapsed >= intervalMs) && debt.currentAmount > 0) {
+                    val amount = formatter.format(debt.currentAmount)
+                    val (title, message) = if (debt.type == DebtType.OWE_ME) {
+                        "Напоминание о долге" to "${debt.name} должен вам $amount ₽. Не забудьте напомнить!"
+                    } else {
+                        "Не забудьте оплатить долг" to "Вы должны ${debt.name} $amount ₽. Погасите задолженность!"
+                    }
+
+                    Log.d(TAG, "doWork() showing notification for debt $debtId '${debt.name}': $title")
+                    showNotification(debtId, title, message)
+                    repository.updateReminderTimestamp(debtId, now)
+                } else {
+                    Log.d(TAG, "doWork() skipping debt ${debt.id} (elapsed < interval or fully paid)")
+                }
             }
-        }
 
-        Log.d(TAG, "doWork() finished")
-        return Result.success()
+            Log.d(TAG, "doWork() finished")
+            Result.success()
+        } catch (e: Exception) {
+            Log.e(TAG, "doWork() failed: ${e.message}")
+            Result.retry()
+        }
     }
 
     private fun showNotification(debtId: Long, title: String, message: String) {

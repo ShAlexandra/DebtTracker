@@ -1,146 +1,167 @@
 package com.example.debttracker.data.repository
 
-import android.util.Log
-import androidx.room.withTransaction
-import com.example.debttracker.data.local.database.AppDatabase
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
-import kotlinx.coroutines.flow.Flow
+import com.example.debttracker.data.remote.AuthTokenStore
+import com.example.debttracker.data.remote.CurrentAmountRequest
+import com.example.debttracker.data.remote.DebtCreateRequest
+import com.example.debttracker.data.remote.DebtResponse
+import com.example.debttracker.data.remote.DebtTrackerApi
+import com.example.debttracker.data.remote.DebtUpdateRequest
+import com.example.debttracker.data.remote.LoginRequest
+import com.example.debttracker.data.remote.LogoutRequest
+import com.example.debttracker.data.remote.PaymentCreateRequest
+import com.example.debttracker.data.remote.PaymentResponse
+import com.example.debttracker.data.remote.RegisterRequest
+import com.example.debttracker.data.remote.ReminderTimestampRequest
+import com.google.gson.JsonParser
+import retrofit2.HttpException
+import java.io.IOException
 
-class Repository(private val database: AppDatabase) {
-    private val debtDao = database.debtDao()
-    private val paymentDao = database.paymentDao()
+class Repository(
+    private val api: DebtTrackerApi,
+    private val tokenStore: AuthTokenStore
+) {
 
-    fun getCurrentDebt(debtId: Long? = null): Debt? {
-        Log.d(TAG, "getCurrentDebt() called with debtId=$debtId")
-        val result = debtId.let { debtDao.getDebtById(it!!) }
-        Log.d(TAG, "getCurrentDebt() result: id=${result?.id}, name=${result?.name}, currentAmount=${result?.currentAmount}")
-        return result
+    fun isLoggedIn(): Boolean = tokenStore.isLoggedIn()
+
+    // ── Auth ──
+
+    suspend fun login(username: String, password: String) {
+        val response = api.login(LoginRequest(username, password))
+        tokenStore.saveTokens(response.accessToken, response.refreshToken)
     }
 
-    fun getDebtList(): List<Debt>? {
-        Log.d(TAG, "getDebtList() called")
-        val result = debtDao.getDebtList()
-        Log.d(TAG, "getDebtList() result: ${result?.size ?: 0} debts; ids=${result?.map { it.id }}")
-        return result
+    suspend fun register(username: String, password: String) {
+        val response = api.register(RegisterRequest(username, password))
+        tokenStore.saveTokens(response.accessToken, response.refreshToken)
     }
 
-    fun getDebtListFlow(): Flow<List<Debt>> {
-        Log.d(TAG, "getDebtListFlow() called")
-        return debtDao.getDebtListFlow()
+    suspend fun logout() {
+        tokenStore.refreshToken?.let { refresh ->
+            try {
+                api.logout(LogoutRequest(refresh))
+            } catch (_: Exception) {
+                // Сеть может быть недоступна — токен всё равно чистим локально.
+            }
+        }
+        tokenStore.clear()
     }
 
-    suspend fun createOrUpdateDebt(
-        initialAmount: Long,
+    // ── Debts ──
+
+    suspend fun getDebts(): List<Debt> =
+        api.getDebts().map { it.toDebt() }
+
+    suspend fun getDebtById(id: Long): Debt? =
+        try {
+            api.getDebt(id).toDebt()
+        } catch (_: HttpException) {
+            null
+        }
+
+    suspend fun getDebtsWithReminders(): List<Debt> =
+        api.getDebtsWithReminders().map { it.toDebt() }
+
+    suspend fun createDebt(
         name: String,
-        debtType: DebtType,
-        date: Long? = null,
-        id: Long? = null,
+        initialAmount: Long,
+        type: DebtType,
+        createdAt: Long? = null,
         reminderIntervalDays: Int? = null
-    ) {
-        Log.d(TAG, "createOrUpdateDebt() called with initialAmount=$initialAmount, name='$name', date=$date, id=$id, reminderIntervalDays=$reminderIntervalDays")
-        if (id == null) {
-            val debt = Debt(
-                initialAmount = initialAmount,
-                currentAmount = initialAmount,
-                createdAt = date ?: System.currentTimeMillis(),
-                name = name,
-                type = debtType,
-                reminderIntervalDays = reminderIntervalDays
-            )
-            Log.d(TAG, "createOrUpdateDebt() inserting new debt: $debt")
-            debtDao.insertDebt(debt)
-        } else {
-            val currentDebt = getCurrentDebt(id)
-            Log.d(TAG, "createOrUpdateDebt() updating existing debt: id=$id, oldCurrentAmount=${currentDebt?.currentAmount}, newAmount=$initialAmount")
-            debtDao.updateCurrentAmount(id = currentDebt?.id!!, amount = initialAmount)
-        }
-    }
-
-    suspend fun recordPayment(debtId: Long, amount: Long, date: Long? = null) {
-        Log.d(TAG, "recordPayment() called with debtId=$debtId, amount=$amount, date=$date")
-        database.withTransaction {
-            val currentDebt = debtDao.getDebtById(debtId)
-                ?: throw IllegalStateException("Debt does not exist")
-            Log.d(TAG, "recordPayment() currentDebt: id=${currentDebt.id}, currentAmount=${currentDebt.currentAmount}, initialAmount=${currentDebt.initialAmount}")
-            if (currentDebt.currentAmount == 0L) {
-                Log.w(TAG, "recordPayment() debt $debtId is already fully paid")
-                throw IllegalStateException("Debt is already fully paid")
-            }
-            val payment = Payment(
-                amount = amount,
-                dateMillis = date ?: System.currentTimeMillis(),
-                debtId = debtId
-            )
-            Log.d(TAG, "recordPayment() inserting payment: $payment")
-            paymentDao.insertPayment(payment)
-            val newRemaining = (currentDebt.currentAmount - amount).coerceAtLeast(0L)
-            Log.d(TAG, "recordPayment() updating currentAmount: ${currentDebt.currentAmount} -> $newRemaining")
-            debtDao.updateCurrentAmount(id = debtId, amount = newRemaining)
-        }
-    }
-
-    suspend fun deletePayment(debtId: Long, payment: Payment) {
-        Log.d(TAG, "deletePayment() called with debtId=$debtId, paymentId=${payment.id}, paymentAmount=${payment.amount}, paymentDate=${payment.dateMillis}")
-        database.withTransaction {
-            paymentDao.deletePayment(payment.id)
-            Log.d(TAG, "deletePayment() payment ${payment.id} deleted")
-            val debt = debtDao.getDebtById(debtId)
-            if (debt == null) {
-                Log.w(TAG, "deletePayment() debt $debtId not found, skipping currentAmount update")
-                return@withTransaction
-            }
-            val newAmount = debt.currentAmount + payment.amount
-            Log.d(TAG, "deletePayment() restoring currentAmount: ${debt.currentAmount} -> $newAmount")
-            debtDao.updateCurrentAmount(
-                id = debt.id!!,
-                amount = newAmount
-            )
-        }
-    }
-
-    fun getPaymentsForDebt(debtId: Long): Flow<List<Payment>> {
-        Log.d(TAG, "getPaymentsForDebt() called with debtId=$debtId")
-        return paymentDao.getPaymentsByDebtId(debtId)
-    }
-
-    fun getDebtByIdFlow(debtId: Long): Flow<Debt?> {
-        Log.d(TAG, "getDebtByIdFlow() called with debtId=$debtId")
-        return debtDao.getDebtByIdFlow(debtId)
-    }
-
-    suspend fun deleteDebt(debtId: Long) {
-        Log.d(TAG, "deleteDebt() called with debtId=$debtId")
-        database.withTransaction {
-            paymentDao.deletePaymentsByDebtId(debtId)
-            debtDao.deleteDebt(debtId)
-        }
-    }
-
-    fun getDebtsWithReminders(): List<Debt>? {
-        Log.d(TAG, "getDebtsWithReminders() called")
-        return debtDao.getDebtsWithReminders()
-    }
-
-    suspend fun updateReminderTimestamp(debtId: Long, timestamp: Long) {
-        Log.d(TAG, "updateReminderTimestamp() called with debtId=$debtId, timestamp=$timestamp")
-        debtDao.updateReminderTimestamp(debtId, timestamp)
-    }
+    ): Debt = api.createDebt(
+        DebtCreateRequest(
+            name = name,
+            debtType = type.name,
+            initialAmount = initialAmount,
+            createdAt = createdAt,
+            reminderIntervalDays = reminderIntervalDays
+        )
+    ).toDebt()
 
     suspend fun updateDebt(
         id: Long,
         name: String,
         initialAmount: Long,
-        currentAmount: Long,
         createdAt: Long,
         reminderIntervalDays: Int?
-    ) {
-        Log.d(TAG, "updateDebt() called with id=$id, name='$name', initialAmount=$initialAmount, currentAmount=$currentAmount, reminderIntervalDays=$reminderIntervalDays")
-        debtDao.updateDebt(id, name, initialAmount, currentAmount, createdAt, reminderIntervalDays)
+    ): Debt = api.updateDebt(
+        id = id,
+        body = DebtUpdateRequest(
+            name = name,
+            initialAmount = initialAmount,
+            createdAt = createdAt,
+            reminderIntervalDays = reminderIntervalDays
+        )
+    ).toDebt()
+
+    suspend fun updateCurrentAmount(id: Long, amount: Long): Debt =
+        api.updateCurrentAmount(id, CurrentAmountRequest(amount)).toDebt()
+
+    suspend fun updateReminderTimestamp(id: Long, timestamp: Long) {
+        api.updateReminderTimestamp(id, ReminderTimestampRequest(timestamp))
     }
 
+    suspend fun deleteDebt(id: Long) {
+        api.deleteDebt(id)
+    }
+
+    // ── Payments ──
+
+    suspend fun getPaymentsForDebt(debtId: Long): List<Payment> =
+        api.getPayments(debtId).map { it.toPayment() }
+
+    suspend fun recordPayment(debtId: Long, amount: Long, dateMillis: Long? = null): Payment =
+        api.recordPayment(debtId, PaymentCreateRequest(amount, dateMillis)).toPayment()
+
+    suspend fun deletePayment(debtId: Long, paymentId: Long) {
+        api.deletePayment(debtId, paymentId)
+    }
+
+    // ── Mapping ──
+
+    private fun DebtResponse.toDebt() = Debt(
+        id = id,
+        name = name,
+        type = DebtType.valueOf(type),
+        initialAmount = initialAmount,
+        currentAmount = currentAmount,
+        createdAt = createdAt,
+        reminderIntervalDays = reminderIntervalDays,
+        lastReminderTimestamp = lastReminderTimestamp
+    )
+
+    private fun PaymentResponse.toPayment() = Payment(
+        id = id,
+        amount = amount,
+        dateMillis = dateMillis,
+        debtId = debtId
+    )
+
     companion object {
-        private const val TAG = "Repository"
+        /**
+         * Преобразует исключение сетевого слоя в человекочитаемое сообщение.
+         * Бэкенд возвращает ошибки в формате {"detail": "..."}.
+         */
+        fun parseErrorMessage(t: Throwable): String {
+            if (t is HttpException) {
+                val errorBody = try {
+                    t.response()?.errorBody()?.string()
+                } catch (_: Exception) {
+                    null
+                }
+                val detail = errorBody?.let { body ->
+                    runCatching {
+                        JsonParser.parseString(body).asJsonObject.get("detail")?.asString
+                    }.getOrNull()
+                }
+                return detail ?: "Ошибка сервера (${t.code()})"
+            }
+            if (t is IOException) {
+                return "Нет соединения с сервером"
+            }
+            return t.message ?: "Неизвестная ошибка"
+        }
     }
 }

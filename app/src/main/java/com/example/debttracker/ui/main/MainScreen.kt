@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,12 +20,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.ui.main.debtCard.DebtCard
@@ -35,7 +36,8 @@ import com.example.debttracker.ui.theme.AppStrings
 @Composable
 fun BindMainScreen(
     viewModel: MainViewModel,
-    onDebtClick: (Long) -> Unit
+    onDebtClick: (Long) -> Unit,
+    onLogout: () -> Unit
 ) {
 
     val state = viewModel.mainState.collectAsState().value
@@ -65,13 +67,20 @@ fun BindMainScreen(
             ) {
 
 
-                Text(
-                    text = AppStrings.mainScreenTitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = AppStrings.mainScreenTitle,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onLogout) {
+                        Text(AppStrings.logoutButton)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

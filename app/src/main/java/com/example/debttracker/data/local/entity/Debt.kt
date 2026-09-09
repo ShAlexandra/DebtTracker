@@ -1,11 +1,10 @@
 package com.example.debttracker.data.local.entity
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity(tableName = "debts")
-data class Debt (
-    @PrimaryKey(autoGenerate = true) val id: Long? = null,
+/**
+ * Долг. Доменная модель, приходящая с сервера (см. DebtResponse).
+ */
+data class Debt(
+    val id: Long? = null,
     val name: String,
     val type: DebtType,
     val initialAmount: Long,

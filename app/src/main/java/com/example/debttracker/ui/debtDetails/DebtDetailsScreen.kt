@@ -68,6 +68,7 @@ fun BindDebtDetailsScreen(
     onPaymentClick: (Payment) -> Unit
 ) {
     val state = viewModel.state.collectAsState().value
+    val errorMessage = viewModel.errorMessage.collectAsState().value
 
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -75,11 +76,31 @@ fun BindDebtDetailsScreen(
     var showEditDialog by remember { mutableStateOf(false) }
 
     if (state == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+        if (errorMessage != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { viewModel.load() }) {
+                    Text(AppStrings.retryButton)
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
     } else {
         DebtDetailsScreen(
