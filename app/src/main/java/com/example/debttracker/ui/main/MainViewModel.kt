@@ -38,13 +38,13 @@ class MainViewModel(
         }
     }
 
-    init {
-        loadDebts()
-    }
-
     fun loadDebts() {
         Log.d(TAG, "loadDebts() called")
-        _mainState.update { it.copy(isLoading = true, errorMessage = null) }
+        // Спиннер показываем только при первой загрузке, чтобы при возврате
+        // на главный экран список обновлялся без мигания оверлея.
+        if (_mainState.value.debtList == null) {
+            _mainState.update { it.copy(isLoading = true, errorMessage = null) }
+        }
         viewModelScope.launch {
             try {
                 val debts = repository.getDebts()
