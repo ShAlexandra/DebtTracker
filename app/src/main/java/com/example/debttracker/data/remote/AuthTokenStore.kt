@@ -6,29 +6,29 @@ import android.content.SharedPreferences
 /**
  * Хранилище JWT-токенов в SharedPreferences.
  */
-class AuthTokenStore(context: Context) {
+class AuthTokenStore(context: Context) : TokenStore {
 
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences("auth_tokens", Context.MODE_PRIVATE)
 
-    var accessToken: String?
+    override var accessToken: String?
         get() = prefs.getString(KEY_ACCESS, null)
         set(value) = prefs.edit().putString(KEY_ACCESS, value).apply()
 
-    var refreshToken: String?
+    override var refreshToken: String?
         get() = prefs.getString(KEY_REFRESH, null)
         set(value) = prefs.edit().putString(KEY_REFRESH, value).apply()
 
-    fun isLoggedIn(): Boolean = accessToken != null || refreshToken != null
+    override fun isLoggedIn(): Boolean = accessToken != null || refreshToken != null
 
-    fun saveTokens(access: String, refresh: String) {
+    override fun saveTokens(access: String, refresh: String) {
         prefs.edit()
             .putString(KEY_ACCESS, access)
             .putString(KEY_REFRESH, refresh)
             .apply()
     }
 
-    fun clear() {
+    override fun clear() {
         prefs.edit().clear().apply()
     }
 
@@ -37,3 +37,4 @@ class AuthTokenStore(context: Context) {
         const val KEY_REFRESH = "refresh_token"
     }
 }
+

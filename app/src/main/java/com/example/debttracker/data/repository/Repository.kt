@@ -3,7 +3,6 @@ package com.example.debttracker.data.repository
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
-import com.example.debttracker.data.remote.AuthTokenStore
 import com.example.debttracker.data.remote.CurrentAmountRequest
 import com.example.debttracker.data.remote.DebtCreateRequest
 import com.example.debttracker.data.remote.DebtResponse
@@ -15,13 +14,14 @@ import com.example.debttracker.data.remote.PaymentCreateRequest
 import com.example.debttracker.data.remote.PaymentResponse
 import com.example.debttracker.data.remote.RegisterRequest
 import com.example.debttracker.data.remote.ReminderTimestampRequest
+import com.example.debttracker.data.remote.TokenStore
 import com.google.gson.JsonParser
 import retrofit2.HttpException
 import java.io.IOException
 
 class Repository(
     private val api: DebtTrackerApi,
-    private val tokenStore: AuthTokenStore
+    private val tokenStore: TokenStore
 ) {
 
     fun isLoggedIn(): Boolean = tokenStore.isLoggedIn()

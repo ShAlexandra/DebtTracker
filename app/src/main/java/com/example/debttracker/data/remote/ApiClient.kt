@@ -22,7 +22,7 @@ object ApiConfig {
  * автоматическое обновление access-токена при 401.
  */
 class ApiClient(
-    private val tokenStore: AuthTokenStore,
+    private val tokenStore: TokenStore,
     private val onSessionExpired: () -> Unit = {}
 ) {
 
