@@ -25,6 +25,7 @@ object AppStrings {
     const val authToggleToLogin = "Уже есть аккаунт? Войти"
     const val authEmptyFieldsError = "Введите логин и пароль"
     const val authPasswordShortError = "Пароль должен быть не короче 6 символов"
+    const val authOrDivider = "или"
 
     // ── Debt dialog ──
     const val dialogTitleNewDebt = "Добавить долг"

@@ -1,5 +1,6 @@
 package com.example.debttracker.data.repository
 
+import com.example.debttracker.BuildConfig
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
@@ -15,6 +16,7 @@ import com.example.debttracker.data.remote.PaymentResponse
 import com.example.debttracker.data.remote.RegisterRequest
 import com.example.debttracker.data.remote.ReminderTimestampRequest
 import com.example.debttracker.data.remote.TokenStore
+import com.example.debttracker.data.remote.VkLoginRequest
 import com.google.gson.JsonParser
 import retrofit2.HttpException
 import java.io.IOException
@@ -35,6 +37,19 @@ class Repository(
 
     suspend fun register(username: String, password: String) {
         val response = api.register(RegisterRequest(username, password))
+        tokenStore.saveTokens(response.accessToken, response.refreshToken)
+    }
+
+    suspend fun loginWithVk(code: String, codeVerifier: String, state: String, deviceId: String) {
+        val response = api.loginWithVk(
+            VkLoginRequest(
+                code = code,
+                redirectUri = BuildConfig.VK_ID_REDIRECT_URI,
+                codeVerifier = codeVerifier,
+                deviceId = deviceId,
+                state = state
+            )
+        )
         tokenStore.saveTokens(response.accessToken, response.refreshToken)
     }
 

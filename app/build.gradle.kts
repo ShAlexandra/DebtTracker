@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("vkid.manifest.placeholders")
 }
 
 // API-конфигурация читается из secrets.properties (файл НЕ коммитится).
@@ -32,26 +33,46 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "VK_ID_REDIRECT_URI", "\"vk${apiProperties.getProperty("VK_ID_CLIENT_ID") ?: ""}://vk.ru/blank.html\"")
     }
 
     base {
         archivesName = "DebtTracker"
     }
 
+    // Релизный ключ читается из secrets.properties (файл НЕ коммитится):
+    // RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD
+    val releaseStoreFile = apiProperties.getProperty("RELEASE_STORE_FILE")
+    val hasReleaseKey = !releaseStoreFile.isNullOrBlank() && rootProject.file(releaseStoreFile).exists()
+
     signingConfigs {
         getByName("debug") {
             // Debug keystore is auto-generated
+        }
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = apiProperties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = apiProperties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = apiProperties.getProperty("RELEASE_KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKey) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn("RELEASE_STORE_FILE not configured — release APK is signed with the DEBUG key and cannot be published")
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
@@ -81,6 +102,8 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.gson)
+    implementation(libs.vkid)
+    implementation(libs.vkid.onetap.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

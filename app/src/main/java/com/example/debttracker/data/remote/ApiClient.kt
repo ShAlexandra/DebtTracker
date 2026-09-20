@@ -40,7 +40,8 @@ class ApiClient(
         val path = chain.request().url.encodedPath
         val isAuthRoute = path.endsWith("/auth/login") ||
             path.endsWith("/auth/register") ||
-            path.endsWith("/auth/refresh")
+            path.endsWith("/auth/refresh") ||
+            path.endsWith("/auth/vk")
 
         val request = if (token != null && !isAuthRoute) {
             chain.request().newBuilder()

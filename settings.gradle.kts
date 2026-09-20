@@ -9,6 +9,9 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+        // VK ID SDK: репозиторий gradle-плагина vkid.manifest.placeholders.
+        maven(url = "https://nexus-external.vkteam.ru/repository/vkid-sdk-android/")
+        maven(url = "https://nexus-external.vkteam.ru/repository/maven/")
     }
 }
 dependencyResolutionManagement {
@@ -16,6 +19,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // VK ID SDK: библиотека com.vk.id:* не публикуется в Maven Central.
+        maven(url = "https://nexus-external.vkteam.ru/repository/vkid-sdk-android/")
+        maven(url = "https://nexus-external.vkteam.ru/repository/maven/")
+        maven(url = "https://nexus-external.vkteam.ru/repository/vk-id-captcha/android/")
     }
 }
 

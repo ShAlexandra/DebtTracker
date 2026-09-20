@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.debttracker.ui.theme.AppStrings
+import com.vk.id.onetap.compose.onetap.OneTap
 
 @Composable
 fun LoginScreen(viewModel: AuthViewModel) {
@@ -145,6 +147,31 @@ fun LoginScreen(viewModel: AuthViewModel) {
                     if (isRegisterMode) AppStrings.authToggleToLogin else AppStrings.authToggleToRegister
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = AppStrings.authOrDivider,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OneTap(
+                modifier = Modifier.fillMaxWidth(),
+                onAuth = { _, _ -> /* не вызывается: используется режим обмена кода на бэкенде */ },
+                onAuthCode = { data, _ -> viewModel.onVkAuthCode(data) },
+                onFail = { _, fail -> viewModel.onVkAuthFail(fail) },
+                authParams = viewModel.vkAuthParams
+            )
         }
     }
 }

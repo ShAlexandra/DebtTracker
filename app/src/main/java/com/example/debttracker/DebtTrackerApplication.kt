@@ -6,6 +6,7 @@ import com.example.debttracker.data.remote.ApiClient
 import com.example.debttracker.data.remote.AuthTokenStore
 import com.example.debttracker.data.repository.Repository
 import com.example.debttracker.ui.utils.ReminderWorker
+import com.vk.id.VKID
 
 class DebtTrackerApplication : Application() {
 
@@ -25,6 +26,7 @@ class DebtTrackerApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        VKID.init(this)
         ReminderWorker.createChannel(this)
         ReminderWorker.schedule(this)
     }

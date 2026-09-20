@@ -25,6 +25,14 @@ data class LogoutRequest(
     val refreshToken: String
 )
 
+data class VkLoginRequest(
+    val code: String,
+    val redirectUri: String,
+    val codeVerifier: String,
+    val deviceId: String,
+    val state: String? = null
+)
+
 data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,

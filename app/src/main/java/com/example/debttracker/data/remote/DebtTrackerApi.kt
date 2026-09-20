@@ -24,6 +24,9 @@ interface DebtTrackerApi {
     @POST("auth/logout")
     suspend fun logout(@Body body: LogoutRequest)
 
+    @POST("auth/vk")
+    suspend fun loginWithVk(@Body body: VkLoginRequest): TokenResponse
+
     // ── Debts ──
     @GET("debts")
     suspend fun getDebts(@Query("active") active: Boolean? = null): List<DebtResponse>
