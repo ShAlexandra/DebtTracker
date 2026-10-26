@@ -113,7 +113,7 @@ fun AppNavGraph(
         composable(Screen.Main.route) {
             val app = LocalContext.current.applicationContext as DebtTrackerApplication
             val viewModel: MainViewModel =
-                viewModel(factory = MainViewModel.factory(app, repository))
+                viewModel(factory = MainViewModel.factory(app, repository, credentialsStore))
             BindMainScreen(
                 viewModel = viewModel,
                 onDebtClick = { debtId ->
@@ -122,7 +122,8 @@ fun AppNavGraph(
                 onLogout = {
                     viewModel.logout()
                     sessionManager.onLoggedOut()
-                }
+                },
+                onAccountDeleted = { sessionManager.onLoggedOut() }
             )
         }
 

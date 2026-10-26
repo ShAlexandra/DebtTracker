@@ -8,4 +8,7 @@ data class MainScreenState(
     val debtList: List<Debt>? = null,
     val errorMessage: String? = null,
     val showDebtDialog: Boolean = false,
+    val showDeleteAccountDialog: Boolean = false,
+    val isDeletingAccount: Boolean = false,
+    val deleteAccountError: String? = null,
 )

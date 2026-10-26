@@ -10,13 +10,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +30,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -38,10 +48,12 @@ import com.example.debttracker.ui.theme.AppStrings
 fun BindMainScreen(
     viewModel: MainViewModel,
     onDebtClick: (Long) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onAccountDeleted: () -> Unit
 ) {
 
     val state = viewModel.mainState.collectAsState().value
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadDebts()
@@ -82,8 +94,38 @@ fun BindMainScreen(
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = onLogout) {
-                        Text(AppStrings.logoutButton)
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = AppStrings.menuContentDescription
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(AppStrings.logoutButton) },
+                                onClick = {
+                                    showMenu = false
+                                    onLogout()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        AppStrings.deleteAccountOption,
+                                        color = AppColors.remainingRed
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.requestDeleteAccount()
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -135,6 +177,51 @@ fun BindMainScreen(
         BindDebtDialog(
             onDismiss = { viewModel.dismissDialogs() },
         onConfirm = { name, amount, debtType, date, reminderIntervalDays -> viewModel.confirmAddDebt(amount, name, debtType, date, reminderIntervalDays) }
+        )
+    }
+
+    if (state.showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!state.isDeletingAccount) viewModel.dismissDeleteAccountDialog()
+            },
+            title = { Text(AppStrings.deleteAccountTitle) },
+            text = {
+                Column {
+                    Text(AppStrings.deleteAccountMessage)
+                    if (state.deleteAccountError != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = state.deleteAccountError,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.deleteAccount(onAccountDeleted) },
+                    enabled = !state.isDeletingAccount
+                ) {
+                    if (state.isDeletingAccount) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(AppStrings.deleteAccountConfirm, color = AppColors.remainingRed)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.dismissDeleteAccountDialog() },
+                    enabled = !state.isDeletingAccount
+                ) {
+                    Text(AppStrings.buttonCancel)
+                }
+            }
         )
     }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.debttracker.data.CredentialsStore
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.repository.Repository
 import com.example.debttracker.ui.utils.ReminderWorker
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(
     application: Application,
-    private val repository: Repository
+    private val repository: Repository,
+    private val credentialsStore: CredentialsStore
 ) : AndroidViewModel(application) {
 
     private val context = application.applicationContext
@@ -28,11 +30,15 @@ class MainViewModel(
     companion object {
         private const val TAG = "MainViewModel"
 
-        fun factory(application: Application, repository: Repository): ViewModelProvider.Factory {
+        fun factory(
+            application: Application,
+            repository: Repository,
+            credentialsStore: CredentialsStore
+        ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return MainViewModel(application, repository) as T
+                    return MainViewModel(application, repository, credentialsStore) as T
                 }
             }
         }
@@ -117,6 +123,37 @@ class MainViewModel(
                 repository.logout()
             } catch (e: Exception) {
                 Log.e(TAG, "logout() failed: ${e.message}")
+            }
+        }
+    }
+
+    fun requestDeleteAccount() {
+        _mainState.update { it.copy(showDeleteAccountDialog = true, deleteAccountError = null) }
+    }
+
+    fun dismissDeleteAccountDialog() {
+        _mainState.update { it.copy(showDeleteAccountDialog = false, deleteAccountError = null) }
+    }
+
+    fun deleteAccount(onDeleted: () -> Unit) {
+        if (_mainState.value.isDeletingAccount) return
+        _mainState.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
+        viewModelScope.launch {
+            try {
+                repository.deleteAccount()
+                credentialsStore.clear()
+                _mainState.update {
+                    it.copy(isDeletingAccount = false, showDeleteAccountDialog = false)
+                }
+                onDeleted()
+            } catch (e: Exception) {
+                Log.e(TAG, "deleteAccount() failed: ${e.message}")
+                _mainState.update {
+                    it.copy(
+                        isDeletingAccount = false,
+                        deleteAccountError = Repository.parseErrorMessage(e)
+                    )
+                }
             }
         }
     }

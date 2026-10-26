@@ -64,6 +64,11 @@ class Repository(
         tokenStore.clear()
     }
 
+    suspend fun deleteAccount() {
+        api.deleteAccount()
+        tokenStore.clear()
+    }
+
     // ── Debts ──
 
     suspend fun getDebts(): List<Debt> =

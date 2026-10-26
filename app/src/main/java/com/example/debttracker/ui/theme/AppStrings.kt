@@ -14,6 +14,13 @@ object AppStrings {
     const val errorTitle = "Ошибка"
     const val retryButton = "Повторить"
     const val logoutButton = "Выйти"
+    const val menuContentDescription = "Меню"
+    const val deleteAccountOption = "Удалить аккаунт"
+    const val deleteAccountTitle = "Удалить аккаунт?"
+    const val deleteAccountMessage =
+        "Аккаунт, все ваши долги и платежи будут удалены без возможности восстановления. " +
+            "Аккаунт ВКонтакте не затрагивается."
+    const val deleteAccountConfirm = "Удалить"
 
     // ── Auth ──
     const val authUsernameLabel = "Логин"
