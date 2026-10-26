@@ -19,3 +19,18 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Сохранять номера строк для читаемых стектрейсов.
+-keepattributes SourceFile,LineNumberTable,Signature,*Annotation*
+-renamesourcefileattribute SourceFile
+
+# Gson/Retrofit: DTO сериализуются по именам полей — их нельзя переименовывать.
+-keep class com.example.debttracker.data.remote.** { *; }
+-keep class com.example.debttracker.data.local.entity.** { *; }
+
+# В релизе вырезаем отладочные логи (в них есть названия и суммы долгов).
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
