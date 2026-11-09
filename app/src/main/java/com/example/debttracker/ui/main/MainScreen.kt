@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,6 +46,9 @@ import com.example.debttracker.ui.main.debtCard.DebtCard
 import com.example.debttracker.ui.main.dialogs.BindDebtDialog
 import com.example.debttracker.ui.theme.AppColors
 import com.example.debttracker.ui.theme.AppStrings
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun BindMainScreen(
@@ -61,11 +67,13 @@ fun BindMainScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.showDebtDialog() },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = AppStrings.addDebtContentDescription)
+            if (!state.isOffline) {
+                FloatingActionButton(
+                    onClick = { viewModel.showDebtDialog() },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = AppStrings.addDebtContentDescription)
+                }
             }
         }
     ) { padding ->
@@ -113,20 +121,30 @@ fun BindMainScreen(
                                     onLogout()
                                 }
                             )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        AppStrings.deleteAccountOption,
-                                        color = AppColors.remainingRed
-                                    )
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    viewModel.requestDeleteAccount()
-                                }
-                            )
+                            if (!state.isOffline) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            AppStrings.deleteAccountOption,
+                                            color = AppColors.remainingRed
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.requestDeleteAccount()
+                                    }
+                                )
+                            }
                         }
                     }
+                }
+
+                if (state.isOffline) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OfflineBanner(
+                        lastSyncMillis = state.lastSyncMillis,
+                        onRetry = { viewModel.loadDebts(showSpinner = true) }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -134,11 +152,14 @@ fun BindMainScreen(
                 when {
 
                     state.errorMessage != null -> {
-                        ErrorView(state.errorMessage)
+                        ErrorView(
+                            message = state.errorMessage,
+                            onRetry = { viewModel.loadDebts(showSpinner = true) }
+                        )
                     }
 
                     state.debtList.isNullOrEmpty() && !state.isLoading -> {
-                        EmptyView()
+                        EmptyView(isOffline = state.isOffline)
                     }
 
                     else -> {
@@ -241,7 +262,7 @@ fun LoadingView() {
 }
 
 @Composable
-fun ErrorView(message: String) {
+fun ErrorView(message: String, onRetry: () -> Unit) {
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -260,11 +281,53 @@ fun ErrorView(message: String) {
             text = message,
             style = MaterialTheme.typography.bodyMedium
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onRetry) {
+            Text(AppStrings.retryButton)
+        }
     }
 }
 
 @Composable
-fun EmptyView() {
+fun OfflineBanner(lastSyncMillis: Long?, onRetry: () -> Unit) {
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = AppStrings.offlineBannerTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                if (lastSyncMillis != null) {
+                    Text(
+                        text = AppStrings.offlineBannerText(formatSyncTime(lastSyncMillis)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            TextButton(onClick = onRetry) {
+                Text(AppStrings.retryButton)
+            }
+        }
+    }
+}
+
+private fun formatSyncTime(millis: Long): String =
+    SimpleDateFormat("d MMM, HH:mm", Locale("ru")).format(Date(millis))
+
+@Composable
+fun EmptyView(isOffline: Boolean = false) {
 
     Column(
         modifier = Modifier
@@ -281,7 +344,7 @@ fun EmptyView() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = AppStrings.emptyHint,
+            text = if (isOffline) AppStrings.emptyHintOffline else AppStrings.emptyHint,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

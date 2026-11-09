@@ -22,6 +22,13 @@ object AppStrings {
             "Аккаунт ВКонтакте не затрагивается."
     const val deleteAccountConfirm = "Удалить"
 
+    // ── Offline mode ──
+    const val offlineBannerTitle = "Нет связи с сервером"
+    fun offlineBannerText(date: String) = "Показаны данные от $date. Изменения станут доступны, когда связь восстановится."
+    const val emptyHintOffline = "Добавить долг можно, когда связь восстановится"
+    const val offlineDetailsNote = "Нет связи с сервером. Данные могли устареть, изменения недоступны."
+    const val offlinePaymentsUnavailable = "История платежей недоступна без связи"
+
     // ── Auth ──
     const val authUsernameLabel = "Логин"
     const val authPasswordLabel = "Пароль"

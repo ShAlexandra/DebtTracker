@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Токены и сохранённые логин/пароль не должны попадать в резервные копии (Android 11 и ниже). -->
+<!-- Токены, сохранённые логин/пароль и кэш долгов не должны попадать в резервные копии (Android 11 и ниже). -->
 <full-backup-content>
     <exclude domain="sharedpref" path="auth_tokens.xml" />
     <exclude domain="sharedpref" path="credentials.xml" />
+    <exclude domain="file" path="debt_cache.json" />
 </full-backup-content>

@@ -62,6 +62,9 @@ interface DebtTrackerApi {
     suspend fun deleteDebt(@Path("id") id: Long)
 
     // ── Payments ──
+    @GET("payments")
+    suspend fun getAllPayments(): List<PaymentResponse>
+
     @GET("debts/{id}/payments")
     suspend fun getPayments(@Path("id") id: Long): List<PaymentResponse>
 

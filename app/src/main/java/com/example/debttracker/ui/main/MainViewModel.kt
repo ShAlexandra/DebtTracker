@@ -44,20 +44,23 @@ class MainViewModel(
         }
     }
 
-    fun loadDebts() {
+    fun loadDebts(showSpinner: Boolean = false) {
         Log.d(TAG, "loadDebts() called")
-        // Спиннер показываем только при первой загрузке, чтобы при возврате
-        // на главный экран список обновлялся без мигания оверлея.
-        if (_mainState.value.debtList == null) {
+        // Спиннер показываем только при первой загрузке (или по явному запросу), чтобы
+        // при возврате на главный экран список обновлялся без мигания оверлея.
+        if (showSpinner || _mainState.value.debtList == null) {
             _mainState.update { it.copy(isLoading = true, errorMessage = null) }
         }
         viewModelScope.launch {
             try {
-                val debts = repository.getDebts()
+                val snapshot = repository.loadDebts()
                 _mainState.update {
                     it.copy(
                         isLoading = false,
-                        debtList = debts.filter { d -> d.currentAmount != 0L }
+                        errorMessage = null,
+                        debtList = snapshot.debts.filter { d -> d.currentAmount != 0L },
+                        isOffline = snapshot.isOffline,
+                        lastSyncMillis = snapshot.savedAt
                     )
                 }
             } catch (e: Exception) {

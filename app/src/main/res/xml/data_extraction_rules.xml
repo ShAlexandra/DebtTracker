@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Токены и сохранённые логин/пароль не попадают ни в облачные копии, ни в перенос между устройствами (Android 12+). -->
+<!-- Токены, сохранённые логин/пароль и кэш долгов не попадают ни в облачные копии, ни в перенос между устройствами (Android 12+). -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="auth_tokens.xml" />
         <exclude domain="sharedpref" path="credentials.xml" />
+        <exclude domain="file" path="debt_cache.json" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="auth_tokens.xml" />
         <exclude domain="sharedpref" path="credentials.xml" />
+        <exclude domain="file" path="debt_cache.json" />
     </device-transfer>
 </data-extraction-rules>

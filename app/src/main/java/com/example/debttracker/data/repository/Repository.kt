@@ -1,6 +1,7 @@
 package com.example.debttracker.data.repository
 
 import com.example.debttracker.BuildConfig
+import com.example.debttracker.data.local.DebtCache
 import com.example.debttracker.data.local.entity.Debt
 import com.example.debttracker.data.local.entity.DebtType
 import com.example.debttracker.data.local.entity.Payment
@@ -18,12 +19,22 @@ import com.example.debttracker.data.remote.ReminderTimestampRequest
 import com.example.debttracker.data.remote.TokenStore
 import com.example.debttracker.data.remote.VkLoginRequest
 import com.google.gson.JsonParser
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 
+/** Список долгов; [isOffline] — сервер недоступен, показана сохранённая копия от [savedAt]. */
+data class DebtsSnapshot(val debts: List<Debt>, val isOffline: Boolean, val savedAt: Long?)
+
+/** Долг с платежами; [payments] == null — история платежей без связи недоступна. */
+data class DebtDetails(val debt: Debt, val payments: List<Payment>?, val isOffline: Boolean)
+
 class Repository(
     private val api: DebtTrackerApi,
-    private val tokenStore: TokenStore
+    private val tokenStore: TokenStore,
+    private val cache: DebtCache? = null
 ) {
 
     fun isLoggedIn(): Boolean = tokenStore.isLoggedIn()
@@ -62,17 +73,79 @@ class Repository(
             }
         }
         tokenStore.clear()
+        cache?.clear()
     }
 
     suspend fun deleteAccount() {
         api.deleteAccount()
         tokenStore.clear()
+        cache?.clear()
     }
 
     // ── Debts ──
 
     suspend fun getDebts(): List<Debt> =
         api.getDebts().map { it.toDebt() }
+
+    /**
+     * Список долгов с синхронизацией кэша: при успехе сохраняет свежие долги и платежи,
+     * при недоступном сервере отдаёт последнюю сохранённую копию (если она есть).
+     */
+    suspend fun loadDebts(): DebtsSnapshot {
+        try {
+            val debts = api.getDebts()
+            val payments = try {
+                api.getAllPayments()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            val now = System.currentTimeMillis()
+            withContext(Dispatchers.IO) { cache?.save(debts, payments, now) }
+            return DebtsSnapshot(debts.map { it.toDebt() }, isOffline = false, savedAt = now)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val snapshot = if (isServerUnavailable(e)) {
+                withContext(Dispatchers.IO) { cache?.load() }
+            } else {
+                null
+            }
+            if (snapshot == null) throw e
+            return DebtsSnapshot(
+                snapshot.debts.map { it.toDebt() },
+                isOffline = true,
+                savedAt = snapshot.savedAt
+            )
+        }
+    }
+
+    /** Долг и его платежи; без связи берёт данные из кэша. null — долг не найден. */
+    suspend fun loadDebtDetails(id: Long): DebtDetails? {
+        try {
+            val debt = api.getDebt(id).toDebt()
+            val payments = api.getPayments(id).map { it.toPayment() }
+            return DebtDetails(debt, payments, isOffline = false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (isServerUnavailable(e)) {
+                return cachedDetails(id) ?: throw e
+            }
+            if (e is HttpException) return null
+            throw e
+        }
+    }
+
+    private suspend fun cachedDetails(id: Long): DebtDetails? {
+        val snapshot = withContext(Dispatchers.IO) { cache?.load() } ?: return null
+        val debt = snapshot.debts.firstOrNull { it.id == id } ?: return null
+        val payments = snapshot.payments?.let { byDebt ->
+            byDebt[id].orEmpty().sortedByDescending { it.dateMillis }.map { it.toPayment() }
+        }
+        return DebtDetails(debt.toDebt(), payments, isOffline = true)
+    }
 
     suspend fun getDebtById(id: Long): Debt? =
         try {
@@ -160,6 +233,10 @@ class Repository(
     )
 
     companion object {
+        /** Нет связи, таймаут или сбой на стороне сервера (5xx) — можно показать сохранённую копию. */
+        fun isServerUnavailable(t: Throwable): Boolean =
+            t is IOException || (t is HttpException && t.code() in 500..599)
+
         /**
          * Преобразует исключение сетевого слоя в человекочитаемое сообщение.
          * Бэкенд возвращает ошибки в формате {"detail": "..."}.

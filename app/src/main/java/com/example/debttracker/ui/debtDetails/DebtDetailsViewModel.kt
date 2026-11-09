@@ -34,14 +34,18 @@ class DebtDetailsViewModel(
         _errorMessage.value = null
         viewModelScope.launch {
             try {
-                val debt = repository.getDebtById(debtId)
-                if (debt == null) {
+                val details = repository.loadDebtDetails(debtId)
+                if (details == null) {
                     _state.value = null
                     _errorMessage.value = "Долг не найден"
                     return@launch
                 }
-                val payments = repository.getPaymentsForDebt(debtId)
-                _state.value = DebtDetailsState(debt = debt, paymentList = payments)
+                _state.value = DebtDetailsState(
+                    debt = details.debt,
+                    paymentList = details.payments.orEmpty(),
+                    isOffline = details.isOffline,
+                    paymentsAvailable = details.payments != null
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "load() failed: ${e.message}")
                 _errorMessage.value = Repository.parseErrorMessage(e)

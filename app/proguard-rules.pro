@@ -34,3 +34,6 @@
     public static int d(...);
     public static int i(...);
 }
+
+# Кэш долгов сериализуется Gson по именам полей.
+-keep class com.example.debttracker.data.local.DebtCache$Snapshot { *; }

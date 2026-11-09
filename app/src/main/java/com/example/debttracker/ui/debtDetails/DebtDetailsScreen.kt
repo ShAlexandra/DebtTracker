@@ -114,7 +114,8 @@ fun BindDebtDetailsScreen(
             onPaymentClick = onPaymentClick,
             onDeleteDebtClick = { showDeleteConfirmDialog = true },
             onShareClick = { showShareDialog = true },
-            onEditDebtClick = { showEditDialog = true }
+            onEditDebtClick = { showEditDialog = true },
+            onRetry = { viewModel.load() }
         )
 
         if (showPaymentDialog) {
@@ -180,7 +181,8 @@ fun DebtDetailsScreen(
     onPaymentClick: (Payment) -> Unit,
     onDeleteDebtClick: () -> Unit,
     onShareClick: () -> Unit,
-    onEditDebtClick: () -> Unit
+    onEditDebtClick: () -> Unit,
+    onRetry: () -> Unit
 ) {
 
     Scaffold(
@@ -201,8 +203,15 @@ fun DebtDetailsScreen(
                     debt = state.debt!!,
                     onBack = onBack,
                     onDeleteDebtClick = onDeleteDebtClick,
-                    onEditDebtClick = onEditDebtClick
+                    onEditDebtClick = onEditDebtClick,
+                    canEdit = !state.isOffline
                 )
+            }
+
+            if (state.isOffline) {
+                item {
+                    OfflineNote(onRetry = onRetry)
+                }
             }
 
             item {
@@ -210,15 +219,17 @@ fun DebtDetailsScreen(
                 DebtProgressCard(state.debt)
             }
 
-            item {
+            if (!state.isOffline) {
+                item {
 
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onRecordPayment
-                ) {
-                    Icon(Icons.Default.Add, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(AppStrings.detailsRecordPayment)
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onRecordPayment
+                    ) {
+                        Icon(Icons.Default.Add, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(AppStrings.detailsRecordPayment)
+                    }
                 }
             }
 
@@ -249,10 +260,18 @@ fun DebtDetailsScreen(
 
             item {
 
-                PaymentHistoryCard(
-                    paymentList = state.paymentList,
-                    onPaymentClick = onPaymentClick
-                )
+                if (state.paymentsAvailable) {
+                    PaymentHistoryCard(
+                        paymentList = state.paymentList,
+                        onPaymentClick = onPaymentClick
+                    )
+                } else {
+                    Text(
+                        AppStrings.offlinePaymentsUnavailable,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -263,7 +282,8 @@ private fun DebtDetailsHeader(
     debt: Debt,
     onBack: () -> Unit,
     onDeleteDebtClick: () -> Unit,
-    onEditDebtClick: () -> Unit
+    onEditDebtClick: () -> Unit,
+    canEdit: Boolean
 ) {
 
     var showMenu by remember { mutableStateOf(false) }
@@ -308,7 +328,7 @@ private fun DebtDetailsHeader(
             )
         }
 
-        Box {
+        if (canEdit) Box {
             IconButton(
                 onClick = { showMenu = true }
             ) {
@@ -336,6 +356,32 @@ private fun DebtDetailsHeader(
                         onDeleteDebtClick()
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineNote(onRetry: () -> Unit) {
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                AppStrings.offlineDetailsNote,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = onRetry) {
+                Text(AppStrings.retryButton)
             }
         }
     }

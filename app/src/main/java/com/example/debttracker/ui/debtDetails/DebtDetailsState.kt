@@ -6,4 +6,6 @@ import com.example.debttracker.data.local.entity.Payment
 data class DebtDetailsState(
     val debt: Debt,
     val paymentList: List<Payment> = listOf(),
+    val isOffline: Boolean = false,
+    val paymentsAvailable: Boolean = true,
 )
